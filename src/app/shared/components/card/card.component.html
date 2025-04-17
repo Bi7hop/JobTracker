@@ -1,0 +1,6 @@
+<div class="relative" [ngClass]="animate ? 'animate-fadeInUp' : ''" [ngStyle]="{'animation-delay': delay + 'ms'}">
+    <div class="absolute inset-0 rounded-lg bg-gradient-to-r opacity-25 blur-md" [ngClass]="borderColor"></div>
+    <div class="relative bg-gray-900 rounded-lg border border-gray-800 z-10 h-full">
+      <ng-content></ng-content>
+    </div>
+</div>
