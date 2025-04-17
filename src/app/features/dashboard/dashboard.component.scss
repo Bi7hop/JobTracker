@@ -1,0 +1,16 @@
+:host {
+    display: block;
+    min-height: calc(100vh - 64px); 
+  }
+  
+  .h-full {
+    height: 100% !important;
+  }
+  
+  .grid {
+    height: fit-content;
+  }
+  
+  ::ng-deep app-card > div {
+    height: 100%;
+  }
