@@ -1,0 +1,50 @@
+<header class="py-2 px-4 border-b border-gray-800">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-purple-700 flex items-center justify-center text-white font-bold">
+          JT
+        </div>
+        <h1 class="text-2xl font-bold text-white">JobTracker</h1>
+      </div>
+      
+      <nav class="hidden md:flex">
+        <ul class="flex gap-6">
+          <li *ngFor="let item of navItems">
+            <a 
+              [routerLink]="item.route" 
+              routerLinkActive="text-white border-b-2 border-purple-600"
+              [routerLinkActiveOptions]="{exact: true}"
+              class="px-3 py-1 cursor-pointer transition-all duration-300 text-gray-400 hover:text-gray-200"
+            >
+              {{item.label}}
+            </a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="flex items-center gap-1 cursor-pointer relative group">
+        <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white">
+          DH
+        </div>
+        <span class="text-gray-500">▼</span>
+        
+        <!-- Dropdown Menu -->
+        <div class="absolute top-full right-0 mt-1 w-48 bg-gray-900 border border-gray-800 rounded-md shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+          <ul class="py-1">
+            <li class="px-3 py-2 hover:bg-gray-800 text-gray-300 hover:text-white cursor-pointer text-sm">
+              <span>Mein Profil</span>
+            </li>
+            <li class="px-3 py-2 hover:bg-gray-800 text-gray-300 hover:text-white cursor-pointer text-sm">
+              <span>Meine Bewerbungen</span>
+            </li>
+            <li class="px-3 py-2 hover:bg-gray-800 text-gray-300 hover:text-white cursor-pointer text-sm">
+              <span>Einstellungen</span>
+            </li>
+            <li class="px-3 py-2 hover:bg-gray-800 text-gray-300 hover:text-white cursor-pointer text-sm border-t border-gray-800 mt-1">
+              <span>Abmelden</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
