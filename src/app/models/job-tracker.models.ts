@@ -7,7 +7,7 @@ export interface Stat {
 }
 
 export interface Application {
-  id?: string | number; 
+  id?: string | number;
   company: string;
   location: string;
   position: string;
@@ -21,21 +21,12 @@ export interface Application {
 }
 
 export interface Event {
-  id: string | number; 
+  id: string | number;
   title: string;
   company: string;
   time: string;
-  date: string; 
-  color: string; 
-}
-
-export interface Event {
-  id: string | number; 
-  title: string;
-  company: string;
-  time: string;
-  date: string; 
-  color: string; 
+  date: string;
+  color: string;
 }
 
 export interface Note {
@@ -72,10 +63,29 @@ export interface Document {
   applicationId: string;
   name: string;
   type: 'lebenslauf' | 'anschreiben' | 'zeugnis' | 'andere';
-  fileType: string; 
+  fileType: string;
   fileSize: number;
   uploadDate: Date;
   tags?: string[];
   version?: number;
-  fileData?: string; 
+  fileData?: string;
+}
+
+export interface StatusChange {
+  id: string;
+  applicationId: string;
+  oldStatus: string | null;
+  newStatus: string;
+  timestamp: Date;
+}
+
+export type TimelineItemType = 'StatusChange' | 'Note' | 'Communication' | 'Reminder' | 'Document';
+
+export interface TimelineItem {
+  id: string;
+  timestamp: Date;
+  type: TimelineItemType;
+  data: StatusChange | Note | Communication | FollowUpReminder | Document;
+  title?: string;
+  icon?: string;
 }
