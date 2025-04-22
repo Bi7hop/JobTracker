@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { trigger, transition, style, animate, query } from '@angular/animations';
 import { JobApplicationService } from '../../services/job-application.service';
-import { Application, Event, Stat } from '../../models/job-tracker.models';
+import { Application, Event, Stat } from '../../models/job-tracker.models'; // Skill entfernt
+import { Subscription, timer } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -27,10 +28,13 @@ import { Application, Event, Stat } from '../../models/job-tracker.models';
     ]),
   ]
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   stats: Stat[] = [];
   applications: Application[] = [];
   events: Event[] = [];
+
+  feedbackMessage: string | null = null;
+  private feedbackTimerSubscription: Subscription | null = null;
 
   constructor(
     private jobAppService: JobApplicationService,
@@ -39,6 +43,10 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDashboardData();
+  }
+
+  ngOnDestroy(): void {
+      this.feedbackTimerSubscription?.unsubscribe();
   }
 
   loadDashboardData(): void {
@@ -51,7 +59,6 @@ export class DashboardComponent implements OnInit {
     this.jobAppService.getEvents().subscribe(data => {
       this.events = data;
     });
-
   }
 
   getStatusColor(status: string): string {
@@ -85,13 +92,16 @@ export class DashboardComponent implements OnInit {
         this.jobAppService.deleteApplication(app.id).subscribe({
           next: () => {
             console.log('Application deleted successfully:', app.company);
+            this.showFeedback(`Bewerbung für '${app.position}' bei ${app.company} gelöscht.`);
           },
           error: (err: any) => {
             console.error('Error deleting application:', err);
+            this.showFeedback(`Fehler beim Löschen: ${err?.message || 'Unbekannter Fehler'}`, true);
           }
         });
       } else {
         console.error('Cannot delete application without an ID:', app.company);
+        this.showFeedback('Fehler: Bewerbung konnte nicht gelöscht werden (fehlende ID).', true);
       }
     } else {
       console.log('Deletion cancelled by user for:', app.company);
@@ -99,6 +109,61 @@ export class DashboardComponent implements OnInit {
   }
 
   onEventClick(event: Event) {
-    console.log('Event clicked:', event.title);
+    console.log('Event clicked:', event);
+    if (event.id && event.date) {
+      this.router.navigate(['/calendar'], {
+        queryParams: {
+          eventId: event.id,
+          focusDate: event.date
+        }
+      });
+    } else {
+       console.warn('Cannot navigate to event without ID or Date:', event);
+    }
+  }
+
+  private showFeedback(message: string, isError: boolean = false, duration: number = 3000): void {
+      this.feedbackTimerSubscription?.unsubscribe();
+      this.feedbackMessage = message;
+      this.feedbackTimerSubscription = timer(duration).subscribe(() => {
+          this.feedbackMessage = null;
+          this.feedbackTimerSubscription = null;
+      });
+  }
+
+  // Hilfsmethoden für Event-Datum-Anzeige
+  getEventDayLabel(dateString: string): string {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const eventDate = new Date(dateString + 'T00:00:00');
+
+    const todayStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+    const tomorrowStr = `${tomorrow.getFullYear()}-${(tomorrow.getMonth() + 1).toString().padStart(2, '0')}-${tomorrow.getDate().toString().padStart(2, '0')}`;
+
+    if (dateString === todayStr) {
+      return 'HEUTE';
+    } else if (dateString === tomorrowStr) {
+      return 'MORGEN';
+    } else {
+      return dateString;
+    }
+  }
+
+  getEventDayLabelClass(dateString: string): string {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+    const tomorrowStr = `${tomorrow.getFullYear()}-${(tomorrow.getMonth() + 1).toString().padStart(2, '0')}-${tomorrow.getDate().toString().padStart(2, '0')}`;
+
+    if (dateString === todayStr) {
+      return 'text-pink-500';
+    } else if (dateString === tomorrowStr) {
+      return 'text-blue-500';
+    } else {
+      return 'text-gray-400';
+    }
   }
 }
