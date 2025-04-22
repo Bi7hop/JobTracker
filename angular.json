@@ -31,7 +31,8 @@
             ],
             "styles": [
               "src/styles.scss",
-              "node_modules/angular-calendar/css/angular-calendar.css"
+              "node_modules/angular-calendar/css/angular-calendar.css",
+              "node_modules/ngx-toastr/toastr.css"
             ],
             "scripts": []
           },
@@ -90,9 +91,10 @@
               "src/favicon.ico",
               "src/assets"
             ],
-            "styles": [ 
+            "styles": [
               "src/styles.scss",
-              "node_modules/angular-calendar/css/angular-calendar.css" 
+              "node_modules/angular-calendar/css/angular-calendar.css",
+              "node_modules/ngx-toastr/toastr.css"
             ],
             "scripts": []
           }
