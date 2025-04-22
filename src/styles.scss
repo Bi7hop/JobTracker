@@ -43,53 +43,78 @@ body {
 .cal-event { @apply p-1 rounded text-xs shadow cursor-pointer transition-opacity duration-200 hover:opacity-80 overflow-hidden whitespace-nowrap text-ellipsis; background-color: var(--cal-color-secondary, theme('colors.gray.700')); border-left-width: 3px; border-left-color: var(--cal-color-primary, theme('colors.gray.500')); color: theme('colors.gray.100'); }
 .cal-all-day-events .cal-event { @apply my-px; }
 /* ================================================ */
-/* Ende Dark theme overrides                       */
+/* End of dark theme overrides                      */
 /* ================================================ */
 
 
 /* ================================================ */
-/* ngx-toastr Custom Styling / Anpassung     */
+/* ngx-toastr custom styling / adjustments          */
 /* ================================================ */
 
-/* Einzelne Toast-Nachricht (Container) */
+/* Individual toast message (container) */
 #toast-container > div {
-  @apply px-3 py-2 shadow-lg rounded-md flex items-center; /* flex + items-center für Icon+Text nebeneinander */
-   max-width: 450px;
+  @apply px-4 py-3 shadow-lg rounded-md;
+  max-width: 450px;
+  min-width: 250px;
 }
 
-/* Icon Styling (Größe + Abstand) */
-/* WICHTIG: Selektor MUSS ggf. mit DevTools angepasst werden! */
+/* Icon container */
+#toast-container .toast-icon,
+#toast-container .ngx-toastr .icon {
+  @apply absolute left-4 top-1/2 -translate-y-1/2;
+}
+
+/* Icon SVG styling */
+#toast-container svg,
 #toast-container .toast-success svg,
 #toast-container .toast-error svg,
 #toast-container .toast-info svg,
-#toast-container .toast-warning svg,
-#toast-container .toast-icon /* Falls eine generische Klasse verwendet wird */
-{
-  @apply w-5 h-5 mr-3 flex-shrink-0; /* Größe, rechter Abstand, nicht schrumpfen */
+#toast-container .toast-warning svg {
+  @apply w-5 h-5;
 }
-/* Regeln zum Verstecken von ::before entfernt, falls du sie hattest */
 
-
-/* Toast Titel ausblenden */
+/* Hide toast title */
 #toast-container .toast-title {
-  display: none !important; /* Versteckt den Titel ("Erfolg", "Fehler" etc.) */
+  display: none !important;
 }
 
-/* Toast Nachricht */
-.toast-message {
-  @apply text-sm ml-0; /* Textgröße, kein linker Abstand mehr nötig, da Titel weg ist */
+/* Toast message with spacing for icon */
+#toast-container .toast-message {
+  @apply text-sm pl-10 pr-4;
 }
 
-/* Fortschrittsbalken */
+/* Toast content container */
+#toast-container .toast-content {
+  @apply flex items-center min-h-[40px];
+}
+
+/* Progress bar */
 .toast-progress {
-   @apply h-1;
+  @apply h-1;
 }
 
-/* Schließen-Button (falls aktiv) */
-.toast-close-button {
-   @apply ml-auto text-lg pl-2;
+/* Close button (if active) */
+#toast-container .toast-close-button {
+  @apply absolute right-3 top-3 text-lg;
+}
+
+/* Specific adjustments for different toast types */
+#toast-container .toast-success {
+  @apply relative;
+}
+
+#toast-container .toast-error {
+  @apply relative;
+}
+
+#toast-container .toast-info {
+  @apply relative;
+}
+
+#toast-container .toast-warning {
+  @apply relative;
 }
 
 /* ================================================ */
-/* Ende ngx-toastr Anpassung            */
+/* End of ngx-toastr customization                  */
 /* ================================================ */
