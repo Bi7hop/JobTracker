@@ -17,6 +17,11 @@ export const routes: Routes = [
     title: 'JobTracker - Neue Bewerbung'
   },
   {
+    path: 'applications/:id',
+    loadComponent: () => import('./features/application-detail/application-detail.component').then(m => m.ApplicationDetailComponent),
+    title: 'JobTracker - Bewerbungsdetails'
+  },
+  {
     path: 'applications/:id/edit', 
     loadComponent: () => import('./components/application-form/application-form.component').then(m => m.ApplicationFormComponent),
     title: 'JobTracker - Bewerbung bearbeiten'
