@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* angular-calendar base CSS (commented out as we override most styles) */
+/* angular-calendar base CSS (commented out) */
 /* @import '~angular-calendar/css/angular-calendar.css'; */
 
 /* Global styles */
@@ -12,152 +12,84 @@ body {
 }
 
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.8s ease-out forwards;
-}
-
-.animate-fadeInUp {
-  animation: fadeInUp 0.8s ease-out forwards;
-}
-
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fadeIn { animation: fadeIn 0.8s ease-out forwards; }
+.animate-fadeInUp { animation: fadeInUp 0.8s ease-out forwards; }
 
 /* ================================================ */
 /* Dark theme overrides for angular-calendar        */
 /* ================================================ */
+.cal-month-view, .cal-week-view, .cal-day-view { @apply bg-gray-800 border border-gray-700 rounded-lg text-gray-200; }
+.cal-header { @apply bg-gray-700/50 text-gray-300 font-semibold border-b border-gray-600; }
+.cal-header .cal-cell { @apply border-r border-gray-600 p-2; &:last-child { @apply border-r-0; } }
+.cal-header.cal-week-view-header .cal-cell, .cal-header.cal-day-view-header .cal-cell { @apply py-2; }
+.cal-cell { @apply border-t border-gray-700; }
+.cal-month-view .cal-day-cell { @apply bg-gray-800 text-gray-200 relative; min-height: 110px; &:hover { @apply bg-gray-700/60; } }
+.cal-month-view .cal-cell-top { @apply min-h-[1.8em]; }
+.cal-month-view .cal-cell-top .cal-day-number { @apply text-gray-400 text-xs absolute top-1 right-1; }
+.cal-month-view .cal-out-month { @apply bg-gray-800/50; }
+.cal-month-view .cal-out-month .cal-cell-top .cal-day-number { @apply opacity-50 text-gray-500; }
+.cal-time-axis { @apply text-gray-400 text-xs font-medium bg-gray-800; .cal-hour-segment { @apply border-gray-700; } }
+.cal-time-grid { @apply bg-gray-800; }
+.cal-week-view .cal-day-column { @apply border-l border-gray-700; }
+.cal-week-view .cal-day-column:first-child { @apply border-l-0; }
+.cal-hour-segment { @apply border-b border-gray-700 bg-gray-800; &:hover { @apply bg-gray-700/60; } .cal-time { @apply text-gray-500 text-xs; } }
+.cal-all-day-events { @apply border-b-2 border-gray-600 bg-gray-700/40 text-gray-200; .cal-event { @apply my-px; } }
+.cal-day-cell.cal-today, .cal-week-view .cal-day-column.cal-today, .cal-day-view .cal-hour-segment.cal-today { background-color: theme('colors.purple.900' / 0.3) !important; }
+.cal-header .cal-cell.cal-today { @apply bg-purple-800/40 text-white; }
+.cal-month-view .cal-cell-top .cal-day-number.cal-today { @apply text-purple-400 font-bold text-lg; }
+.cal-current-time-marker { @apply bg-red-500 h-0.5; }
+.cal-event { @apply p-1 rounded text-xs shadow cursor-pointer transition-opacity duration-200 hover:opacity-80 overflow-hidden whitespace-nowrap text-ellipsis; background-color: var(--cal-color-secondary, theme('colors.gray.700')); border-left-width: 3px; border-left-color: var(--cal-color-primary, theme('colors.gray.500')); color: theme('colors.gray.100'); }
+.cal-all-day-events .cal-event { @apply my-px; }
+/* ================================================ */
+/* Ende Dark theme overrides                       */
+/* ================================================ */
 
-/* General calendar container (month, week, day views) */
-.cal-month-view, .cal-week-view, .cal-day-view {
-  @apply bg-gray-800 border border-gray-700 rounded-lg text-gray-200;
+
+/* ================================================ */
+/* ngx-toastr Custom Styling / Anpassung     */
+/* ================================================ */
+
+/* Einzelne Toast-Nachricht (Container) */
+#toast-container > div {
+  @apply px-3 py-2 shadow-lg rounded-md flex items-center; /* flex + items-center für Icon+Text nebeneinander */
+   max-width: 450px;
 }
 
-/* Header row (Mon, Tue, Wed... / day dates) */
-.cal-header {
-  @apply bg-gray-700/50 text-gray-300 font-semibold border-b border-gray-600;
-  .cal-cell {
-    @apply border-r border-gray-600 p-2;
-    &:last-child { @apply border-r-0; }
-  }
-  &.cal-week-view-header .cal-cell,
-  &.cal-day-view-header .cal-cell {
-     @apply py-2;
-  }
+/* Icon Styling (Größe + Abstand) */
+/* WICHTIG: Selektor MUSS ggf. mit DevTools angepasst werden! */
+#toast-container .toast-success svg,
+#toast-container .toast-error svg,
+#toast-container .toast-info svg,
+#toast-container .toast-warning svg,
+#toast-container .toast-icon /* Falls eine generische Klasse verwendet wird */
+{
+  @apply w-5 h-5 mr-3 flex-shrink-0; /* Größe, rechter Abstand, nicht schrumpfen */
+}
+/* Regeln zum Verstecken von ::before entfernt, falls du sie hattest */
+
+
+/* Toast Titel ausblenden */
+#toast-container .toast-title {
+  display: none !important; /* Versteckt den Titel ("Erfolg", "Fehler" etc.) */
 }
 
-/* Day cells (general) */
-.cal-cell {
-   @apply border-t border-gray-700;
-}
-.cal-cell-row .cal-cell:first-child {}
-
-
-/* Day cells in the month view */
-.cal-month-view .cal-day-cell {
-  @apply bg-gray-800 text-gray-200 relative;
-  min-height: 110px;
-  &:hover { @apply bg-gray-700/60; }
-}
-.cal-month-view .cal-cell-top {
-     @apply min-h-[1.8em];
- }
-.cal-month-view .cal-cell-top .cal-day-number {
-     @apply text-gray-400 text-xs absolute top-1 right-1;
- }
- .cal-month-view .cal-out-month {
-     @apply bg-gray-800/50;
-    .cal-cell-top .cal-day-number {
-     @apply opacity-50 text-gray-500;
-   }
- }
-
-
-/* Specific styles for week/day views */
-
-/* Time axis on the left */
-.cal-time-axis {
-   @apply text-gray-400 text-xs font-medium bg-gray-800;
-   .cal-hour-segment { @apply border-gray-700; }
+/* Toast Nachricht */
+.toast-message {
+  @apply text-sm ml-0; /* Textgröße, kein linker Abstand mehr nötig, da Titel weg ist */
 }
 
-/* Time grid container */
-.cal-time-grid {
-    @apply bg-gray-800;
+/* Fortschrittsbalken */
+.toast-progress {
+   @apply h-1;
 }
 
-/* Columns for days in the week view */
-.cal-week-view .cal-day-column {
-    @apply border-l border-gray-700;
-}
-.cal-week-view .cal-day-column:first-child {
-     @apply border-l-0;
- }
-
-/* Hour segments */
-.cal-hour-segment {
-  @apply border-b border-gray-700 bg-gray-800;
-  &:hover { @apply bg-gray-700/60; }
-  .cal-time { @apply text-gray-500 text-xs; }
-}
-
-/* All-day events area */
-.cal-all-day-events {
-   @apply border-b-2 border-gray-600 bg-gray-700/40 text-gray-200;
-   .cal-event { @apply my-px; }
-}
-
-
-/* Highlight current day */
-.cal-day-cell.cal-today, /* Month view today */
-.cal-week-view .cal-day-column.cal-today, /* Entire column today (week view) */
-.cal-day-view .cal-hour-segment.cal-today { /* Hour block today (day view) */
-  /* Important: Use '!important' only if necessary to override defaults */
-  background-color: theme('colors.purple.900' / 0.3) !important;
-}
-
-/* Header cell for current day */
-.cal-header .cal-cell.cal-today {
-    @apply bg-purple-800/40 text-white;
-}
-/* Day number for today (month view) */
-.cal-month-view .cal-cell-top .cal-day-number.cal-today {
-    @apply text-purple-400 font-bold text-lg;
-}
-
-
-/* Current time marker */
-.cal-current-time-marker {
-  @apply bg-red-500 h-0.5;
-}
-
-
-/* Event styling */
-.cal-event {
-  @apply p-1 rounded text-xs shadow cursor-pointer transition-opacity duration-200 hover:opacity-80 overflow-hidden whitespace-nowrap text-ellipsis;
-  background-color: var(--cal-color-secondary, theme('colors.gray.700'));
-  border-left-width: 3px;
-  border-left-color: var(--cal-color-primary, theme('colors.gray.500'));
-  color: theme('colors.gray.100');
-}
-/* Specific event styling for all-day events */
-.cal-all-day-events .cal-event {
-    @apply my-px;
+/* Schließen-Button (falls aktiv) */
+.toast-close-button {
+   @apply ml-auto text-lg pl-2;
 }
 
 /* ================================================ */
-/* End of dark theme overrides                      */
+/* Ende ngx-toastr Anpassung            */
 /* ================================================ */
