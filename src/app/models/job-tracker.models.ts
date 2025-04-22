@@ -17,6 +17,7 @@ export interface Application {
   hasNotes?: boolean;
   hasCommunications?: boolean;
   hasReminders?: boolean;
+  hasDocuments?: boolean;
 }
 
 export interface Event {
@@ -64,4 +65,17 @@ export interface FollowUpReminder {
   reminderText: string;
   isCompleted: boolean;
   createdAt: Date;
+}
+
+export interface Document {
+  id: string;
+  applicationId: string;
+  name: string;
+  type: 'lebenslauf' | 'anschreiben' | 'zeugnis' | 'andere';
+  fileType: string; 
+  fileSize: number;
+  uploadDate: Date;
+  tags?: string[];
+  version?: number;
+  fileData?: string; 
 }
