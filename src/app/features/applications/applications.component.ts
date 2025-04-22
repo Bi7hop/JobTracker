@@ -38,6 +38,14 @@ export class ApplicationsComponent implements OnInit {
     }
   }
 
+  goToDetail(app: Application): void {
+    if (app.id) {
+      this.router.navigate(['/applications', app.id]);
+    } else {
+      console.warn('Cannot open application details without an ID:', app.company);
+    }
+  }
+  
   goToEdit(app: Application): void {
     if (app.id) {
       this.router.navigate(['/applications', app.id, 'edit']);
