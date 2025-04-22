@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, map, combineLatest } from 'rxjs';
-import { Application, Event, Stat, Note, Communication, FollowUpReminder } from '../models/job-tracker.models';
+import { Application, Event, Stat, Note, Communication, FollowUpReminder, Document } from '../models/job-tracker.models';
 
 const INITIAL_APPLICATIONS: Application[] = [
   { id: '1', company: 'TechSolutions GmbH', location: 'München', position: 'Senior Angular Dev', status: 'Gespräch', date: 'Heute', color: 'bg-gradient-to-r from-purple-600 to-pink-500' },
@@ -27,7 +27,6 @@ export class JobApplicationService {
     map(apps => this.calculateStats(apps))
   );
 
-  // Angepasste Events mit ID und Datum
   private eventsData: Event[] = [
     {
       id: 'evt-1',
@@ -47,9 +46,20 @@ export class JobApplicationService {
     }
   ];
 
+  private notesSubject = new BehaviorSubject<Note[]>([]);
+  notes$ = this.notesSubject.asObservable();
+
+  private communicationsSubject = new BehaviorSubject<Communication[]>([]);
+  communications$ = this.communicationsSubject.asObservable();
+
+  private remindersSubject = new BehaviorSubject<FollowUpReminder[]>([]);
+  reminders$ = this.remindersSubject.asObservable();
+
+  private documentsSubject = new BehaviorSubject<Document[]>([]);
+  documents$ = this.documentsSubject.asObservable();
+
   constructor() { }
 
-  // Hilfsmethode für Datums-Strings
   private getDateStringFor(day: 'today' | 'tomorrow'): string {
     const dt = new Date();
     if (day === 'tomorrow') {
@@ -147,13 +157,8 @@ export class JobApplicationService {
   }
 
   getEvents(): Observable<Event[]> {
-    // 'isToday' wird hier nicht mehr explizit behandelt, da Datum vorhanden
     return of(this.eventsData);
   }
-
-  // Notes Management
-  private notesSubject = new BehaviorSubject<Note[]>([]);
-  notes$ = this.notesSubject.asObservable();
 
   getNotesForApplication(applicationId: string): Observable<Note[]> {
     return this.notes$.pipe(
@@ -205,10 +210,6 @@ export class JobApplicationService {
     return of(undefined);
   }
 
-  // Communication Management
-  private communicationsSubject = new BehaviorSubject<Communication[]>([]);
-  communications$ = this.communicationsSubject.asObservable();
-
   getCommunicationsForApplication(applicationId: string): Observable<Communication[]> {
     return this.communications$.pipe(
       map(comms => comms.filter(comm => comm.applicationId === applicationId))
@@ -227,10 +228,6 @@ export class JobApplicationService {
     this.communicationsSubject.next([...currentComms, newComm]);
     return of(newComm);
   }
-
-  // Follow-up Reminders Management
-  private remindersSubject = new BehaviorSubject<FollowUpReminder[]>([]);
-  reminders$ = this.remindersSubject.asObservable();
 
   getRemindersForApplication(applicationId: string): Observable<FollowUpReminder[]> {
     return this.reminders$.pipe(
@@ -276,29 +273,67 @@ export class JobApplicationService {
     throw new Error('Reminder not found');
   }
 
-  // Neue Methode für Applications mit Activity
+  getDocumentsForApplication(applicationId: string): Observable<Document[]> {
+    return this.documents$.pipe(
+      map(docs => docs.filter(doc => doc.applicationId === applicationId))
+    );
+  }
+  
+  addDocument(documentData: Omit<Document, 'id' | 'uploadDate'>): Observable<Document> {
+    const newDocument: Document = {
+      id: Date.now().toString(),
+      ...documentData,
+      uploadDate: new Date(),
+      version: 1
+    };
+    
+    const currentDocs = this.documentsSubject.getValue();
+    
+    // Version handling: If a document of the same type exists, increment version
+    const existingDoc = currentDocs.find(
+      doc => doc.applicationId === documentData.applicationId && 
+             doc.type === documentData.type
+    );
+    
+    if (existingDoc) {
+      newDocument.version = (existingDoc.version || 1) + 1;
+    }
+    
+    this.documentsSubject.next([...currentDocs, newDocument]);
+    return of(newDocument);
+  }
+  
+  deleteDocument(id: string): Observable<void> {
+    const currentDocs = this.documentsSubject.getValue();
+    const updatedDocs = currentDocs.filter(doc => doc.id !== id);
+    this.documentsSubject.next(updatedDocs);
+    return of(undefined);
+  }
+
   getApplicationsWithActivity(): Observable<Application[]> {
     return combineLatest([
       this.applicationsSubject.asObservable(),
       this.notes$,
       this.communications$,
-      this.reminders$
+      this.reminders$,
+      this.documents$
     ]).pipe(
-      map(([applications, notes, communications, reminders]) => {
+      map(([applications, notes, communications, reminders, documents]) => {
         return applications.map(app => {
           const hasNotes = notes.some(note => note.applicationId === app.id);
           const hasCommunications = communications.some(comm => comm.applicationId === app.id);
           const hasReminders = reminders.some(reminder => reminder.applicationId === app.id);
+          const hasDocuments = documents.some(doc => doc.applicationId === app.id);
           
           return {
             ...app,
             hasNotes,
             hasCommunications,
-            hasReminders
+            hasReminders,
+            hasDocuments
           };
         });
       })
     );
   }
-
 }
