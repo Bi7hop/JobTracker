@@ -1,31 +1,125 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
-import { Observable } from 'rxjs'; 
-import { JobApplicationService } from '../../services/job-application.service'; 
-import { Application } from '../../models/job-tracker.models'; 
-// import { CardComponent } from '../../shared/components/card/card.component';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Observable, map } from 'rxjs';
+import { JobApplicationService } from '../../services/job-application.service';
+import { Application } from '../../models/job-tracker.models';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-applications',
   standalone: true,
-  imports: [CommonModule, RouterLink /*, CardComponent */ ],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './applications.component.html',
-  styleUrls: ['./applications.component.scss'] 
+  styleUrls: ['./applications.component.scss']
 })
 export class ApplicationsComponent implements OnInit {
 
   applications$!: Observable<Application[]>;
   feedbackMessage: string | null = null;
-  private feedbackTimer: any = null; 
+  private feedbackTimer: any = null;
+  
+  selectedStatus: string = 'all';
+  searchTerm: string = '';
+  statusOptions = [
+    { value: 'all', label: 'Alle Status' },
+    { value: 'active', label: 'Aktive Bewerbungen' },
+    { value: 'interview', label: 'Vorstellungsgespräche' },
+    { value: 'positive', label: 'Positive Antworten' },
+    { value: 'Gespräch', label: 'Gespräch' },
+    { value: 'Gesendet', label: 'Gesendet' },
+    { value: 'HR Screening', label: 'HR Screening' },
+    { value: 'Angebot', label: 'Angebot' },
+    { value: 'Absage', label: 'Absage' },
+    { value: 'Wartend', label: 'Wartend' }
+  ];
 
   constructor(
     private jobAppService: JobApplicationService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.applications$ = this.jobAppService.getApplications();
+    this.route.queryParams.subscribe(params => {
+      if (params['status']) {
+        this.selectedStatus = params['status'];
+      }
+      if (params['search']) {
+        this.searchTerm = params['search'];
+      }
+      this.loadApplications();
+    });
+  }
+
+  loadApplications(): void {
+    this.applications$ = this.jobAppService.getApplications().pipe(
+      map(apps => this.filterApplications(apps))
+    );
+  }
+
+  filterApplications(applications: Application[]): Application[] {
+    return applications.filter(app => {
+      switch(this.selectedStatus) {
+        case 'active':
+          return app.status !== 'Absage' && this.matchesSearch(app);
+        case 'interview':
+          return (app.status === 'Gespräch' || app.status === 'HR Screening') && this.matchesSearch(app);
+        case 'positive':
+          return (app.status === 'Gespräch' || app.status === 'Angebot') && this.matchesSearch(app);
+        case 'all':
+          return this.matchesSearch(app);
+        default:
+          return app.status === this.selectedStatus && this.matchesSearch(app);
+      }
+    });
+  }
+
+  private matchesSearch(app: Application): boolean {
+    if (!this.searchTerm) return true;
+    
+    const searchLower = this.searchTerm.toLowerCase();
+    return (
+      app.company.toLowerCase().includes(searchLower) ||
+      app.position.toLowerCase().includes(searchLower) ||
+      app.location.toLowerCase().includes(searchLower)
+    );
+  }
+
+  onStatusChange(): void {
+    this.updateFilters();
+  }
+
+  onSearchChange(): void {
+    this.updateFilters();
+  }
+
+  updateFilters(): void {
+    const queryParams: any = {};
+    if (this.selectedStatus !== 'all') {
+      queryParams.status = this.selectedStatus;
+    }
+    if (this.searchTerm) {
+      queryParams.search = this.searchTerm;
+    }
+    
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: queryParams,
+      queryParamsHandling: 'merge'
+    });
+    
+    this.loadApplications();
+  }
+
+  clearFilters(): void {
+    this.selectedStatus = 'all';
+    this.searchTerm = '';
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {}
+    });
+    this.loadApplications();
   }
 
   getStatusColor(status: string): string {
@@ -34,6 +128,8 @@ export class ApplicationsComponent implements OnInit {
       case 'Gesendet': return 'bg-blue-900 text-blue-400';
       case 'Absage': return 'bg-pink-900 text-pink-400';
       case 'HR Screening': return 'bg-yellow-900 text-yellow-400';
+      case 'Angebot': return 'bg-lime-900 text-lime-400';
+      case 'Wartend': return 'bg-gray-800 text-gray-400';
       default: return 'bg-gray-800 text-gray-400';
     }
   }
@@ -55,7 +151,7 @@ export class ApplicationsComponent implements OnInit {
   }
 
   deleteApplication(app: Application, event: MouseEvent): void {
-    event.stopPropagation(); 
+    event.stopPropagation();
     const confirmation = confirm(`Möchtest du die Bewerbung wirklich löschen?\n\n${app.company} - ${app.position}`);
 
     if (confirmation) {
@@ -80,10 +176,10 @@ export class ApplicationsComponent implements OnInit {
   }
 
   private showFeedback(message: string, isError: boolean = false, duration: number = 3000): void {
-     clearTimeout(this.feedbackTimer); 
-     this.feedbackMessage = message;
-     this.feedbackTimer = setTimeout(() => {
-         this.feedbackMessage = null;
-     }, duration);
- }
+    clearTimeout(this.feedbackTimer);
+    this.feedbackMessage = message;
+    this.feedbackTimer = setTimeout(() => {
+      this.feedbackMessage = null;
+    }, duration);
+  }
 }
