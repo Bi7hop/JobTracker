@@ -60,18 +60,38 @@ export class DashboardComponent implements OnInit {
        this.events = data;
      });
    }
+  
   getStatusColor(status: string): string {
      switch(status) {
        case 'Gespräch': return 'bg-green-900 text-green-400';
        case 'Gesendet': return 'bg-blue-900 text-blue-400';
        case 'Absage': return 'bg-pink-900 text-pink-400';
        case 'HR Screening': return 'bg-yellow-900 text-yellow-400';
+       case 'Angebot': return 'bg-lime-900 text-lime-400';
+       case 'Wartend': return 'bg-gray-800 text-gray-400';
        default: return 'bg-gray-800 text-gray-400';
      }
    }
 
   onStatClick(stat: Stat) {
-    console.log('Stat Card clicked:', stat.title);
+    const queryParams: any = {};
+    
+    switch(stat.title) {
+      case 'Aktive Bewerbungen':
+        queryParams.status = 'active';
+        break;
+      case 'Vorstellungsgespräche':
+        queryParams.status = 'interview';
+        break;
+      case 'Positive Antworten':
+        queryParams.status = 'positive';
+        break;
+      case 'Absagen':
+        queryParams.status = 'Absage';
+        break;
+    }
+    
+    this.router.navigate(['/applications'], { queryParams });
   }
 
   onApplicationClick(app: Application) {
@@ -104,7 +124,6 @@ export class DashboardComponent implements OnInit {
     }
     this.resetDeleteState(); 
   }
-
 
   cancelDelete(): void {
     this.resetDeleteState();
