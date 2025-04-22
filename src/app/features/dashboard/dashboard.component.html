@@ -1,13 +1,8 @@
-<div class="container mx-auto p-8 min-h-[calc(100vh-theme(space.16))] pb-24">
+<div class="container mx-auto p-8 min-h-[calc(100vh-theme(space.16))] pb-24 relative">
   <div class="mb-8">
     <h2 class="text-3xl font-bold mb-2">Bewerbungs-Dashboard</h2>
     <div class="w-48 h-1 bg-gradient-to-r from-purple-600 to-pink-500 mb-4"></div>
     <p class="text-base text-gray-400">Überblick über deine aktuellen Bewerbungsaktivitäten</p>
-  </div>
-
-  <div *ngIf="feedbackMessage"
-       class="mb-4 p-3 rounded-md bg-green-800 border border-green-600 text-green-100 text-sm shadow-md">
-    {{ feedbackMessage }}
   </div>
 
   <div class="flex flex-row space-x-6 mb-8">
@@ -118,4 +113,12 @@
       </app-card>
       </div>
   </div>
+
+  <app-confirmation-dialog
+    *ngIf="isConfirmingDelete && applicationToDelete"
+    [message]="'Möchtest du die Bewerbung wirklich löschen?\n\nFirma: ' + applicationToDelete.company + '\nPosition: ' + applicationToDelete.position"
+    (confirm)="confirmDelete()"
+    (cancel)="cancelDelete()">
+  </app-confirmation-dialog>
+
 </div>
