@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, map } from 'rxjs';
-import { Application, Event, Stat } from '../models/job-tracker.models';
+import { Application, Event, Stat } from '../models/job-tracker.models'; // Skill entfernt
 
 const INITIAL_APPLICATIONS: Application[] = [
   { id: '1', company: 'TechSolutions GmbH', location: 'München', position: 'Senior Angular Dev', status: 'Gespräch', date: 'Heute', color: 'bg-gradient-to-r from-purple-600 to-pink-500' },
@@ -27,12 +27,38 @@ export class JobApplicationService {
     map(apps => this.calculateStats(apps))
   );
 
+  // Angepasste Events mit ID und Datum
   private eventsData: Event[] = [
-    { title: 'Vorstellungsgespräch', company: 'TechSolutions GmbH', time: '14:30 Uhr', isToday: true, color: 'border-pink-500' },
-    { title: 'HR Call', company: 'CodeMasters KG', time: '10:00 Uhr', isToday: false, color: 'border-blue-500' }
+    {
+      id: 'evt-1',
+      title: 'Vorstellungsgespräch',
+      company: 'TechSolutions GmbH',
+      time: '14:30 Uhr',
+      date: this.getDateStringFor('today'),
+      color: 'border-pink-500'
+    },
+    {
+      id: 'evt-2',
+      title: 'HR Call',
+      company: 'CodeMasters KG',
+      time: '10:00 Uhr',
+      date: this.getDateStringFor('tomorrow'),
+      color: 'border-blue-500'
+    }
   ];
 
   constructor() { }
+
+  // Hilfsmethode für Datums-Strings
+  private getDateStringFor(day: 'today' | 'tomorrow'): string {
+    const dt = new Date();
+    if (day === 'tomorrow') {
+      dt.setDate(dt.getDate() + 1);
+    }
+    const month = (dt.getMonth() + 1).toString().padStart(2, '0');
+    const date = dt.getDate().toString().padStart(2, '0');
+    return `${dt.getFullYear()}-${month}-${date}`;
+  }
 
   private getColorForStatus(status: string): string {
     switch (status) {
@@ -92,22 +118,18 @@ export class JobApplicationService {
     }
   }
 
-  // --- HIER IST DIE FEHLENDE deleteApplication METHODE ---
   deleteApplication(id: string | number): Observable<void> {
     const currentApplications = this.applicationsSubject.getValue();
     const updatedApplications = currentApplications.filter(app => app.id !== id);
 
     if (updatedApplications.length < currentApplications.length) {
       this.applicationsSubject.next(updatedApplications);
-      return of(undefined); // Signalisiert Erfolg (void)
+      return of(undefined);
     } else {
       console.warn('Application not found for deletion:', id);
-      // Fehler optional anders behandeln, z.B. mit throwError
       return of(undefined);
     }
   }
-  // --- ENDE deleteApplication ---
-
 
   private calculateStats(apps: Application[]): Stat[] {
       const totalApps = apps.length;
@@ -125,9 +147,8 @@ export class JobApplicationService {
   }
 
   getEvents(): Observable<Event[]> {
+    // 'isToday' wird hier nicht mehr explizit behandelt, da Datum vorhanden
     return of(this.eventsData);
   }
-
- 
 
 }
