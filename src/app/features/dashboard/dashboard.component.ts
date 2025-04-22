@@ -53,7 +53,7 @@ export class DashboardComponent implements OnInit {
      this.jobAppService.stats$.subscribe(data => {
        this.stats = data;
      });
-     this.jobAppService.getApplications().subscribe(data => {
+     this.jobAppService.getApplicationsWithActivity().subscribe(data => {
        this.applications = data;
      });
      this.jobAppService.getEvents().subscribe(data => {
@@ -76,9 +76,9 @@ export class DashboardComponent implements OnInit {
 
   onApplicationClick(app: Application) {
      if (app.id) {
-       this.router.navigate(['/applications', app.id, 'edit']);
+       this.router.navigate(['/applications', app.id]);
      } else {
-       console.warn('Cannot edit application without an ID:', app.company);
+       console.warn('Cannot open application details without an ID:', app.company);
      }
    }
 
