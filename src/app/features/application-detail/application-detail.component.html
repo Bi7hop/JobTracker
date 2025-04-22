@@ -1,361 +1,112 @@
-<div class="container mx-auto p-8">
-  <div *ngIf="application$ | async as application; else loading">
-    <div class="mb-6 flex items-center justify-between">
+<div class="container mx-auto p-4 md:p-8">
+  <div *ngIf="application$ | async as application; else loadingApp">
+    <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
       <div class="flex items-center space-x-4">
-        <a routerLink="/applications" class="text-gray-400 hover:text-white transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-        </a>
-        <div>
-          <h1 class="text-2xl font-bold text-white">{{ application.company }}</h1>
-          <p class="text-gray-400">{{ application.position }}</p>
-        </div>
+        <a routerLink="/applications" class="text-gray-400 hover:text-white transition" title="Zurück zur Übersicht"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></a>
+        <div><h1 class="text-2xl font-bold text-white">{{ application.company }}</h1><p class="text-gray-400">{{ application.position }}</p></div>
       </div>
-      <a [routerLink]="['/applications', application.id, 'edit']" 
-         class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded transition duration-300">
-        Bearbeiten
-      </a>
+      <a [routerLink]="['/applications', application.id, 'edit']" class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded transition duration-300 self-end sm:self-auto">Bearbeiten</a>
     </div>
 
     <div class="bg-gray-900 rounded-lg border border-gray-800 p-6 mb-6">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div>
-          <p class="text-gray-400 text-sm">Status</p>
-          <p class="text-white mt-1">
-            <span class="px-3 py-1 rounded-full text-sm" [ngClass]="getStatusColor(application.status)">
-              {{ application.status }}
-            </span>
-          </p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div><p class="text-gray-400 text-sm">Status</p><p class="text-white mt-1"><span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="getStatusColor(application.status)">{{ application.status }}</span></p></div>
+            <div><p class="text-gray-400 text-sm">Beworben am</p><p class="text-white mt-1">{{ application.date | date:'dd.MM.yyyy' }}</p></div>
+            <div><p class="text-gray-400 text-sm">Ort</p><p class="text-white mt-1">{{ application.location || '-' }}</p></div>
+            <div><p class="text-gray-400 text-sm">Interne ID</p><p class="text-white mt-1 text-xs break-all">{{ application.id }}</p></div>
         </div>
-        <div>
-          <p class="text-gray-400 text-sm">Datum</p>
-          <p class="text-white mt-1">{{ application.date }}</p>
-        </div>
-        <div>
-          <p class="text-gray-400 text-sm">Ort</p>
-          <p class="text-white mt-1">{{ application.location || '-' }}</p>
-        </div>
-        <div>
-          <p class="text-gray-400 text-sm">ID</p>
-          <p class="text-white mt-1">{{ application.id }}</p>
-        </div>
-      </div>
     </div>
 
-    <div class="mb-6">
-      <nav class="flex space-x-4">
-        <button (click)="setActiveTab('notes')"
-                [class.border-purple-500]="activeTab === 'notes'"
-                [class.text-white]="activeTab === 'notes'"
-                [class.border-transparent]="activeTab !== 'notes'"
-                [class.text-gray-400]="activeTab !== 'notes'"
-                class="px-3 py-2 border-b-2 font-medium transition">
-          Notizen
-        </button>
-        <button (click)="setActiveTab('communications')"
-                [class.border-purple-500]="activeTab === 'communications'"
-                [class.text-white]="activeTab === 'communications'"
-                [class.border-transparent]="activeTab !== 'communications'"
-                [class.text-gray-400]="activeTab !== 'communications'"
-                class="px-3 py-2 border-b-2 font-medium transition">
-          Kommunikation
-        </button>
-        <button (click)="setActiveTab('reminders')"
-                [class.border-purple-500]="activeTab === 'reminders'"
-                [class.text-white]="activeTab === 'reminders'"
-                [class.border-transparent]="activeTab !== 'reminders'"
-                [class.text-gray-400]="activeTab !== 'reminders'"
-                class="px-3 py-2 border-b-2 font-medium transition">
-          Erinnerungen
-        </button>
-        <button (click)="setActiveTab('documents')"
-                [class.border-purple-500]="activeTab === 'documents'"
-                [class.text-white]="activeTab === 'documents'"
-                [class.border-transparent]="activeTab !== 'documents'"
-                [class.text-gray-400]="activeTab !== 'documents'"
-                class="px-3 py-2 border-b-2 font-medium transition">
-          Dokumente
-        </button>
-      </nav>
+    <div class="mb-6 border-b border-gray-700">
+        <nav class="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto pb-px" aria-label="Tabs">
+            <button (click)="setActiveTab('timeline')" [attr.aria-current]="activeTab === 'timeline' ? 'page' : null" [class.border-purple-500]="activeTab === 'timeline'" [class.text-white]="activeTab === 'timeline'" [class.border-transparent]="activeTab !== 'timeline'" [class.text-gray-400]="activeTab !== 'timeline'" [class.hover:text-gray-200]="activeTab !== 'timeline'" [class.hover:border-gray-500]="activeTab !== 'timeline'" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition">Timeline</button>
+            <button (click)="setActiveTab('notes')" [attr.aria-current]="activeTab === 'notes' ? 'page' : null" [class.border-purple-500]="activeTab === 'notes'" [class.text-white]="activeTab === 'notes'" [class.border-transparent]="activeTab !== 'notes'" [class.text-gray-400]="activeTab !== 'notes'" [class.hover:text-gray-200]="activeTab !== 'notes'" [class.hover:border-gray-500]="activeTab !== 'notes'" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition">Notizen</button>
+            <button (click)="setActiveTab('communications')" [attr.aria-current]="activeTab === 'communications' ? 'page' : null" [class.border-purple-500]="activeTab === 'communications'" [class.text-white]="activeTab === 'communications'" [class.border-transparent]="activeTab !== 'communications'" [class.text-gray-400]="activeTab !== 'communications'" [class.hover:text-gray-200]="activeTab !== 'communications'" [class.hover:border-gray-500]="activeTab !== 'communications'" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition">Kommunikation</button>
+            <button (click)="setActiveTab('reminders')" [attr.aria-current]="activeTab === 'reminders' ? 'page' : null" [class.border-purple-500]="activeTab === 'reminders'" [class.text-white]="activeTab === 'reminders'" [class.border-transparent]="activeTab !== 'reminders'" [class.text-gray-400]="activeTab !== 'reminders'" [class.hover:text-gray-200]="activeTab !== 'reminders'" [class.hover:border-gray-500]="activeTab !== 'reminders'" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition">Erinnerungen</button>
+            <button (click)="setActiveTab('documents')" [attr.aria-current]="activeTab === 'documents' ? 'page' : null" [class.border-purple-500]="activeTab === 'documents'" [class.text-white]="activeTab === 'documents'" [class.border-transparent]="activeTab !== 'documents'" [class.text-gray-400]="activeTab !== 'documents'" [class.hover:text-gray-200]="activeTab !== 'documents'" [class.hover:border-gray-500]="activeTab !== 'documents'" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition">Dokumente</button>
+        </nav>
     </div>
 
     <div [ngSwitch]="activeTab">
-      <div *ngSwitchCase="'notes'" class="space-y-6">
-        <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">Neue Notiz</h3>
-          <textarea [(ngModel)]="newNoteContent"
-                    class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    rows="3"
-                    placeholder="Notiz eingeben..."></textarea>
-          <div class="mt-3 flex justify-end">
-            <button (click)="addNote()"
-                    [disabled]="!newNoteContent.trim()"
-                    class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
-              Notiz hinzufügen
-            </button>
-          </div>
-        </div>
 
-        <div *ngIf="notes$ | async as notes; else noNotes" class="space-y-4">
-          <div *ngFor="let note of notes" class="bg-gray-900 rounded-lg border border-gray-800 p-4">
-            <div class="flex justify-between items-start">
-              <div class="flex-1">
-                <p class="text-gray-300 whitespace-pre-wrap">{{ note.content }}</p>
-                <div class="mt-2 text-sm text-gray-500">
-                  Erstellt: {{ note.createdAt | date:'dd.MM.yyyy, HH:mm' }}
-                  <span *ngIf="note.updatedAt"> | Bearbeitet: {{ note.updatedAt | date:'dd.MM.yyyy, HH:mm' }}</span>
-                </div>
-              </div>
-              <button (click)="deleteNote(note.id)"
-                      class="text-red-500 hover:text-red-400 ml-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-              </button>
+      <div *ngSwitchCase="'timeline'" class="space-y-5">
+        <h2 class="text-xl font-semibold text-white mb-4">Aktivitätsverlauf</h2>
+        <div *ngIf="timeline$ | async as timelineItems; else loadingTimeline">
+          <div *ngIf="timelineItems.length > 0; else noTimelineItems">
+            <div class="relative border-l border-gray-700 ml-5 pl-8 space-y-6">
+              <div *ngFor="let item of timelineItems" class="relative">
+                 <div class="absolute -left-[34px] top-1 flex items-center justify-center w-6 h-6 rounded-full bg-gray-700 ring-8 ring-gray-950">
+                    <span class="text-xs">{{ getTimelineItemIcon(item) }}</span>
+                 </div>
+                 <div class="p-4 bg-gray-900 rounded-lg border border-gray-800 shadow-sm">
+                   <div class="flex justify-between items-center mb-2">
+                     <span class="font-semibold text-base text-white">{{ item.title || item.type }}</span>
+                     <time class="text-xs font-normal text-gray-500">{{ item.timestamp | date:'dd.MM.yyyy, HH:mm' }}</time>
+                   </div>
+
+                   <div class="text-sm text-gray-300">
+                     <ng-container *ngIf="isStatusChangeItem(item)">
+                        Von <span class="font-medium text-gray-400">{{ item.data.oldStatus || 'N/A (Erstellt)' }}</span> nach
+                        <span class="font-medium text-white px-2 py-0.5 rounded" [ngClass]="getStatusColor(item.data.newStatus)">{{ item.data.newStatus }}</span>
+                     </ng-container>
+
+                     <ng-container *ngIf="isNoteItem(item)">
+                        <div class="whitespace-pre-wrap bg-gray-800/50 p-2 rounded">
+                            {{ item.data.content }}
+                            <div *ngIf="item.data.updatedAt" class="text-xs text-gray-500 mt-1">(Bearbeitet: {{ item.data.updatedAt | date:'dd.MM.yyyy, HH:mm' }})</div>
+                        </div>
+                     </ng-container>
+
+                     <ng-container *ngIf="isCommunicationItem(item)">
+                        <p class="mb-1 whitespace-pre-wrap">{{ item.data.content }}</p>
+                        <div class="flex flex-wrap gap-x-4 text-xs text-gray-500 mt-1">
+                            <span *ngIf="item.data.contactPerson">Kontakt: {{ item.data.contactPerson }}</span>
+                            <span>Richtung: {{ item.data.direction === 'outgoing' ? 'Ausgehend' : 'Eingehend' }}</span>
+                            <span>Typ: {{ item.data.type }}</span>
+                        </div>
+                     </ng-container>
+
+                     <ng-container *ngIf="isReminderItem(item)">
+                        <p class="mb-1">{{ item.data.reminderText }}</p>
+                        <p class="text-xs" [ngClass]="item.data.isCompleted ? 'text-green-500' : 'text-yellow-500'">
+                            Fällig: {{ item.data.date | date:'dd.MM.yyyy' }}
+                            {{ item.data.isCompleted ? '(Erledigt)' : '' }}
+                            <button *ngIf="!item.data.isCompleted" (click)="toggleReminderCompletion(item.data.id)" class="ml-2 text-xs text-purple-400 hover:text-purple-300">[Als erledigt markieren]</button>
+                        </p>
+                     </ng-container>
+
+                     <ng-container *ngIf="isDocumentItem(item)">
+                        <p class="mb-1 flex items-center space-x-2">
+                            <span class="font-medium">{{ item.data.name }}</span>
+                            <span class="text-xs px-1.5 py-0.5 rounded" [ngClass]="getDocumentTypeColor(item.data.type)">{{ getDocumentTypeLabel(item.data.type) }}</span>
+                            <span *ngIf="item.data.version && item.data.version > 1" class="text-xs text-gray-500">(v{{ item.data.version! }})</span>
+                        </p>
+                        <p class="text-xs text-gray-500">Größe: {{ formatFileSize(item.data.fileSize) }}</p>
+                        <div class="mt-2 space-x-2">
+                            <button (click)="previewDocument(item.data)" *ngIf="item.data.fileData" class="text-blue-400 hover:text-blue-300 text-xs">[Vorschau]</button>
+                            <button (click)="downloadDocument(item.data)" *ngIf="item.data.fileData" class="text-green-400 hover:text-green-300 text-xs">[Download]</button>
+                            <button (click)="deleteDocument(item.data)" class="text-red-400 hover:text-red-300 text-xs">[Löschen]</button>
+                        </div>
+                     </ng-container>
+                   </div> </div> </div> </div> </div>
+          <ng-template #noTimelineItems>
+            <div class="text-center py-10">
+                <svg class="mx-auto h-12 w-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-300">Keine Aktivitäten</h3>
+                <p class="mt-1 text-sm text-gray-500">Für diese Bewerbung wurden noch keine Aktivitäten erfasst.</p>
             </div>
-          </div>
+          </ng-template>
         </div>
-        <ng-template #noNotes>
-          <p class="text-center text-gray-500">Noch keine Notizen vorhanden</p>
+        <ng-template #loadingTimeline>
+          <p class="text-center text-gray-500 py-10">Lade Aktivitätenverlauf...</p>
         </ng-template>
-      </div>
+      </div> <div *ngSwitchCase="'notes'" class="space-y-6"> <div class="bg-gray-900 rounded-lg border border-gray-800 p-6"><h3 class="text-lg font-semibold text-white mb-4">Neue Notiz hinzufügen</h3><textarea [(ngModel)]="newNoteContent" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500" rows="3" placeholder="Notiz eingeben..."></textarea><div class="mt-3 flex justify-end"><button (click)="addNote()" [disabled]="!newNoteContent.trim()" class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">Hinzufügen</button></div></div> <div *ngIf="notes$ | async as notes; else loadingNotes"><div *ngIf="notes.length > 0; else noNotes"><h3 class="text-lg font-semibold text-white mb-4">Vorhandene Notizen</h3><div class="space-y-4"><div *ngFor="let note of notes" class="bg-gray-900 rounded-lg border border-gray-800 p-4"><div class="flex justify-between items-start"><div class="flex-1 mr-4"><p class="text-gray-300 whitespace-pre-wrap">{{ note.content }}</p><div class="mt-2 text-xs text-gray-500">Erstellt: {{ note.createdAt | date:'dd.MM.yyyy, HH:mm' }}<span *ngIf="note.updatedAt"> | Bearbeitet: {{ note.updatedAt | date:'dd.MM.yyyy, HH:mm' }}</span></div></div><button (click)="deleteNote(note.id)" class="text-red-500 hover:text-red-400 flex-shrink-0" title="Notiz löschen"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button></div></div></div></div><ng-template #noNotes><p class="text-center text-gray-500 py-10">Noch keine Notizen für diese Bewerbung vorhanden.</p></ng-template></div><ng-template #loadingNotes><p class="text-center text-gray-500 py-10">Lade Notizen...</p></ng-template> </div>
+      <div *ngSwitchCase="'communications'" class="space-y-6"> <div class="bg-gray-900 rounded-lg border border-gray-800 p-6"><h3 class="text-lg font-semibold text-white mb-4">Neue Kommunikation erfassen</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="comm-type" class="block text-sm font-medium text-gray-300 mb-1">Typ</label><select id="comm-type" [(ngModel)]="newCommunication.type" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"><option value="email">E-Mail</option><option value="phone">Telefon</option><option value="meeting">Meeting</option><option value="other">Sonstiges</option></select></div><div><label for="comm-direction" class="block text-sm font-medium text-gray-300 mb-1">Richtung</label><select id="comm-direction" [(ngModel)]="newCommunication.direction" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"><option value="outgoing">Ausgehend</option><option value="incoming">Eingehend</option></select></div><div><label for="comm-date" class="block text-sm font-medium text-gray-300 mb-1">Datum</label><input id="comm-date" type="date" [(ngModel)]="newCommunicationDateString" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></div><div><label for="comm-contact" class="block text-sm font-medium text-gray-300 mb-1">Kontaktperson (Optional)</label><input id="comm-contact" type="text" [(ngModel)]="newCommunication.contactPerson" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500" placeholder="z.B. Max Mustermann"></div><div class="md:col-span-2"><label for="comm-subject" class="block text-sm font-medium text-gray-300 mb-1">Betreff</label><input id="comm-subject" type="text" [(ngModel)]="newCommunication.subject" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500" placeholder="Betreff eingeben..."></div><div class="md:col-span-2"><label for="comm-content" class="block text-sm font-medium text-gray-300 mb-1">Inhalt / Notizen</label><textarea id="comm-content" [(ngModel)]="newCommunication.content" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500" rows="3" placeholder="Details zur Kommunikation..."></textarea></div></div><div class="mt-4 flex justify-end"><button (click)="addCommunication()" [disabled]="!newCommunication.subject.trim() || !newCommunication.content.trim()" class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">Hinzufügen</button></div></div> <div *ngIf="communications$ | async as communications; else loadingCommunications"><div *ngIf="communications.length > 0; else noCommunications"><h3 class="text-lg font-semibold text-white mb-4">Erfasste Kommunikation</h3><div class="space-y-4"><div *ngFor="let comm of communications" class="bg-gray-900 rounded-lg border border-gray-800 p-4"><div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-3"><span class="px-2 py-1 rounded-full text-xs font-medium" [ngClass]="{'bg-blue-900 text-blue-400': comm.type === 'email','bg-green-900 text-green-400': comm.type === 'phone','bg-purple-900 text-purple-400': comm.type === 'meeting','bg-gray-800 text-gray-400': comm.type === 'other'}">{{ comm.type === 'email' ? 'E-Mail' : comm.type === 'phone' ? 'Telefon' : comm.type === 'meeting' ? 'Meeting' : 'Sonstiges' }}</span><span class="px-2 py-1 rounded-full text-xs font-medium" [ngClass]="{'bg-pink-900 text-pink-400': comm.direction === 'outgoing','bg-cyan-900 text-cyan-400': comm.direction === 'incoming'}">{{ comm.direction === 'outgoing' ? 'Ausgehend' : 'Eingehend' }}</span></div><span class="text-sm text-gray-500">{{ comm.date | date:'dd.MM.yyyy, HH:mm' }}</span></div><h4 class="font-medium text-white mb-1">{{ comm.subject }}</h4><p class="text-gray-300 text-sm mb-2 whitespace-pre-wrap">{{ comm.content }}</p><p *ngIf="comm.contactPerson" class="text-sm text-gray-500">Kontaktperson: {{ comm.contactPerson }}</p></div></div></div><ng-template #noCommunications><p class="text-center text-gray-500 py-10">Noch keine Kommunikation für diese Bewerbung erfasst.</p></ng-template></div><ng-template #loadingCommunications><p class="text-center text-gray-500 py-10">Lade Kommunikation...</p></ng-template> </div>
+      <div *ngSwitchCase="'reminders'" class="space-y-6"> <div class="bg-gray-900 rounded-lg border border-gray-800 p-6"><h3 class="text-lg font-semibold text-white mb-4">Neue Erinnerung hinzufügen</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="rem-date" class="block text-sm font-medium text-gray-300 mb-1">Fälligkeitsdatum</label><input id="rem-date" type="date" [(ngModel)]="newReminderDateString" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></div><div class="md:col-span-2"><label for="rem-text" class="block text-sm font-medium text-gray-300 mb-1">Erinnerungstext</label><textarea id="rem-text" [(ngModel)]="newReminder.reminderText" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500" rows="2" placeholder="Erinnerung eingeben..."></textarea></div></div><div class="mt-4 flex justify-end"><button (click)="addReminder()" [disabled]="!newReminder.reminderText.trim()" class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">Hinzufügen</button></div></div> <div *ngIf="reminders$ | async as reminders; else loadingReminders"><div *ngIf="reminders.length > 0; else noReminders"><h3 class="text-lg font-semibold text-white mb-4">Anstehende Erinnerungen</h3><div class="space-y-4"><div *ngFor="let reminder of reminders" class="bg-gray-900 rounded-lg border border-gray-800 p-4 transition" [ngClass]="{'opacity-60 border-l-4 border-green-600': reminder.isCompleted, 'border-l-4 border-yellow-600': !reminder.isCompleted}"><div class="flex items-start"><input type="checkbox" [id]="'reminder-' + reminder.id" [checked]="reminder.isCompleted" (change)="toggleReminderCompletion(reminder.id)" class="mt-1 mr-3 h-5 w-5 text-purple-600 rounded border-gray-600 bg-gray-700 focus:ring-purple-500 cursor-pointer"><label [for]="'reminder-' + reminder.id" class="flex-1 cursor-pointer"><p class="text-gray-300" [ngClass]="{'line-through': reminder.isCompleted}">{{ reminder.reminderText }}</p><p class="text-sm text-gray-500 mt-1">Fällig: {{ reminder.date | date:'dd.MM.yyyy' }} <span class="text-xs ml-1">(Erstellt: {{ reminder.createdAt | date:'dd.MM.yyyy' }})</span></p></label></div></div></div></div><ng-template #noReminders><p class="text-center text-gray-500 py-10">Keine Erinnerungen für diese Bewerbung vorhanden.</p></ng-template></div><ng-template #loadingReminders><p class="text-center text-gray-500 py-10">Lade Erinnerungen...</p></ng-template> </div>
+      <div *ngSwitchCase="'documents'" class="space-y-6"> <div class="bg-gray-900 rounded-lg border border-gray-800 p-6"><h3 class="text-lg font-semibold text-white mb-4">Dokument hochladen</h3><div class="flex flex-col space-y-4"><div class="flex items-center justify-center w-full"><label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-700 border-dashed rounded-lg cursor-pointer bg-gray-800 hover:bg-gray-700 transition"><div class="flex flex-col items-center justify-center pt-5 pb-6"><svg class="w-8 h-8 mb-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg><p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Klicke zum Hochladen</span> oder ziehe Dateien hier hin</p><p class="text-xs text-gray-500">PDF, DOC(X), Bilder (MAX. 10MB)</p></div><input id="dropzone-file" type="file" class="hidden" accept=".pdf,.doc,.docx,image/*" (change)="onFileSelected($event)" /></label></div><div *ngIf="selectedFile" class="text-sm text-gray-400">Ausgewählt: {{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})</div><div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4"><select [(ngModel)]="selectedDocumentType" class="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"><option value="lebenslauf">Lebenslauf</option><option value="anschreiben">Anschreiben</option><option value="zeugnis">Arbeitszeugnis</option><option value="andere">Andere</option></select><button (click)="uploadDocument()" [disabled]="!selectedFile" class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">Hochladen</button></div></div></div> <div *ngIf="documents$ | async as documents; else loadingDocuments"><div *ngIf="documents.length > 0; else noDocuments"><h3 class="text-lg font-semibold text-white mb-4">Hochgeladene Dokumente</h3><div class="space-y-4"><div *ngFor="let doc of documents" class="bg-gray-900 rounded-lg border border-gray-800 p-4"><div class="flex flex-col sm:flex-row items-start sm:items-center justify-between"><div class="flex items-center space-x-4 mb-2 sm:mb-0"><div class="p-2 rounded-lg" [ngClass]="getDocumentTypeColor(doc.type)"><svg *ngIf="doc.fileType.startsWith('image/')" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4V5h12v10zm-9.414-4.586a1 1 0 01-1.414-1.414L6.172 8a1 1 0 011.414 0l.707.707a1 1 0 001.414 0L12.172 6a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-.707-.707a1 1 0 00-1.414 0l-1.414 1.414z" clip-rule="evenodd" /></svg><svg *ngIf="doc.fileType === 'application/pdf'" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,19L12,15H16L14,12L16,9H12L10,13H8L10,16H8L10,19Z"/></svg><svg *ngIf="!doc.fileType.startsWith('image/') && doc.fileType !== 'application/pdf'" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M16,11H8V13H16V11M16,15H8V17H16V15Z"/></svg></div><div><h4 class="font-medium text-white">{{ doc.name }}</h4><p class="text-sm text-gray-400">{{ getDocumentTypeLabel(doc.type) }} · {{ formatFileSize(doc.fileSize) }} · Hochgeladen: {{ doc.uploadDate | date:'dd.MM.yyyy' }}<span *ngIf="doc.version && doc.version > 1"> · Version {{ doc.version! }}</span></p></div></div><div class="flex space-x-2 mt-2 sm:mt-0 self-end sm:self-center"><button (click)="previewDocument(doc)" *ngIf="doc.fileData" class="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 rounded transition" title="Vorschau"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button><button (click)="downloadDocument(doc)" *ngIf="doc.fileData" class="p-1 text-green-400 hover:text-green-300 hover:bg-green-900/30 rounded transition" title="Herunterladen"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button><button (click)="deleteDocument(doc)" class="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition" title="Löschen"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div></div></div></div></div><ng-template #noDocuments><p class="text-center text-gray-500 py-10">Noch keine Dokumente für diese Bewerbung hochgeladen.</p></ng-template></div><ng-template #loadingDocuments><p class="text-center text-gray-500 py-10">Lade Dokumente...</p></ng-template> </div>
 
-      <div *ngSwitchCase="'communications'" class="space-y-6">
-        <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">Neue Kommunikation</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-1">Typ</label>
-              <select [(ngModel)]="newCommunication.type"
-                      class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                <option value="email">E-Mail</option>
-                <option value="phone">Telefon</option>
-                <option value="meeting">Meeting</option>
-                <option value="other">Sonstiges</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-1">Richtung</label>
-              <select [(ngModel)]="newCommunication.direction"
-                      class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                <option value="outgoing">Ausgehend</option>
-                <option value="incoming">Eingehend</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-1">Datum</label>
-              <input type="date" [(ngModel)]="newCommunication.date"
-                     class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-1">Kontaktperson</label>
-              <input type="text" [(ngModel)]="newCommunication.contactPerson"
-                     class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                     placeholder="z.B. Max Mustermann">
-            </div>
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-300 mb-1">Betreff</label>
-              <input type="text" [(ngModel)]="newCommunication.subject"
-                     class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                     placeholder="Betreff eingeben...">
-            </div>
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-300 mb-1">Inhalt</label>
-              <textarea [(ngModel)]="newCommunication.content"
-                        class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        rows="3"
-                        placeholder="Details zur Kommunikation..."></textarea>
-            </div>
-          </div>
-          <div class="mt-4 flex justify-end">
-            <button (click)="addCommunication()"
-                    [disabled]="!newCommunication.subject.trim() || !newCommunication.content.trim()"
-                    class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
-              Kommunikation hinzufügen
-            </button>
-          </div>
-        </div>
-
-        <div *ngIf="communications$ | async as communications; else noCommunications" class="space-y-4">
-          <div *ngFor="let comm of communications" class="bg-gray-900 rounded-lg border border-gray-800 p-4">
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-3">
-                <span class="px-2 py-1 rounded-full text-xs font-medium"
-                      [ngClass]="{
-                        'bg-blue-900 text-blue-400': comm.type === 'email',
-                        'bg-green-900 text-green-400': comm.type === 'phone',
-                        'bg-purple-900 text-purple-400': comm.type === 'meeting',
-                        'bg-gray-800 text-gray-400': comm.type === 'other'
-                      }">
-                  {{ comm.type === 'email' ? 'E-Mail' : 
-                     comm.type === 'phone' ? 'Telefon' : 
-                     comm.type === 'meeting' ? 'Meeting' : 'Sonstiges' }}
-                </span>
-                <span class="px-2 py-1 rounded-full text-xs font-medium"
-                      [ngClass]="{
-                        'bg-pink-900 text-pink-400': comm.direction === 'outgoing',
-                        'bg-cyan-900 text-cyan-400': comm.direction === 'incoming'
-                      }">
-                  {{ comm.direction === 'outgoing' ? 'Ausgehend' : 'Eingehend' }}
-                </span>
-              </div>
-              <span class="text-sm text-gray-500">
-                {{ comm.date | date:'dd.MM.yyyy, HH:mm' }}
-              </span>
-            </div>
-            <h4 class="font-medium text-white mb-1">{{ comm.subject }}</h4>
-            <p class="text-gray-300 text-sm mb-2 whitespace-pre-wrap">{{ comm.content }}</p>
-            <p *ngIf="comm.contactPerson" class="text-sm text-gray-500">
-              Kontaktperson: {{ comm.contactPerson }}
-            </p>
-          </div>
-        </div>
-        <ng-template #noCommunications>
-          <p class="text-center text-gray-500">Noch keine Kommunikation erfasst</p>
-        </ng-template>
-      </div>
-
-      <div *ngSwitchCase="'reminders'" class="space-y-6">
-
-        <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">Neue Erinnerung</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-1">Datum</label>
-              <input type="date" [(ngModel)]="newReminder.date"
-                     class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-            </div>
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-300 mb-1">Erinnerungstext</label>
-              <textarea [(ngModel)]="newReminder.reminderText"
-                        class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        rows="2"
-                        placeholder="Erinnerung eingeben..."></textarea>
-            </div>
-          </div>
-          <div class="mt-4 flex justify-end">
-            <button (click)="addReminder()"
-                    [disabled]="!newReminder.reminderText.trim()"
-                    class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
-              Erinnerung hinzufügen
-            </button>
-          </div>
-        </div>
-
-        <div *ngIf="reminders$ | async as reminders; else noReminders" class="space-y-4">
-          <div *ngFor="let reminder of reminders"
-               class="bg-gray-900 rounded-lg border border-gray-800 p-4"
-               [ngClass]="{'opacity-50': reminder.isCompleted}">
-            <div class="flex items-start">
-              <input type="checkbox"
-                     [checked]="reminder.isCompleted"
-                     (change)="toggleReminderCompletion(reminder.id)"
-                     class="mt-1 mr-3 h-5 w-5 text-purple-600 rounded border-gray-600 bg-gray-700 focus:ring-purple-500">
-              <div class="flex-1">
-                <p class="text-gray-300" [ngClass]="{'line-through': reminder.isCompleted}">
-                  {{ reminder.reminderText }}
-                </p>
-                <p class="text-sm text-gray-500 mt-1">
-                  Fällig: {{ reminder.date | date:'dd.MM.yyyy' }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <ng-template #noReminders>
-          <p class="text-center text-gray-500">Keine Erinnerungen vorhanden</p>
-        </ng-template>
-      </div>
-
-      <div *ngSwitchCase="'documents'" class="space-y-6">
-        <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">Dokument hochladen</h3>
-          <div class="flex flex-col space-y-4">
-            <div class="flex items-center justify-center w-full">
-              <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-700 border-dashed rounded-lg cursor-pointer bg-gray-800 hover:bg-gray-700">
-                <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg class="w-8 h-8 mb-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                  </svg>
-                  <p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Klicke zum Hochladen</span> oder ziehe Dateien hier hin</p>
-                  <p class="text-xs text-gray-500">PDF, DOCX, DOC (MAX. 10MB)</p>
-                </div>
-                <input id="dropzone-file" type="file" class="hidden" accept=".pdf,.doc,.docx" (change)="onFileSelected($event)" />
-              </label>
-            </div>
-            
-            <div class="flex space-x-4">
-              <select [(ngModel)]="selectedDocumentType" class="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white">
-                <option value="lebenslauf">Lebenslauf</option>
-                <option value="anschreiben">Anschreiben</option>
-                <option value="zeugnis">Arbeitszeugnis</option>
-                <option value="andere">Andere</option>
-              </select>
-              <button (click)="uploadDocument()" [disabled]="!selectedFile" 
-                      class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white disabled:opacity-50">
-                Hochladen
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div *ngIf="documents$ | async as documents; else noDocuments" class="space-y-4">
-          <div *ngFor="let doc of documents" class="bg-gray-900 rounded-lg border border-gray-800 p-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-4">
-                <div class="p-2 rounded-lg" [ngClass]="getDocumentTypeColor(doc.type)">
-                  <svg *ngIf="doc.fileType === 'pdf'" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,19L12,15H16L14,12L16,9H12L10,13H8L10,16H8L10,19Z"/>
-                  </svg>
-                  <svg *ngIf="doc.fileType !== 'pdf'" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M16,11H8V13H16V11M16,15H8V17H16V15Z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h4 class="font-medium text-white">{{ doc.name }}</h4>
-                  <p class="text-sm text-gray-400">
-                    {{ getDocumentTypeLabel(doc.type) }} · {{ formatFileSize(doc.fileSize) }} · 
-                    Hochgeladen: {{ doc.uploadDate | date:'dd.MM.yyyy' }}
-                    <span *ngIf="doc.version"> · Version {{ doc.version }}</span>
-                  </p>
-                </div>
-              </div>
-              <div class="flex space-x-2">
-                <button (click)="previewDocument(doc)" 
-                        class="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 rounded transition"
-                        title="Vorschau">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                  </svg>
-                </button>
-                <button (click)="downloadDocument(doc)" 
-                        class="p-2 text-green-400 hover:text-green-300 hover:bg-green-900/30 rounded transition"
-                        title="Herunterladen">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                  </svg>
-                </button>
-                <button (click)="deleteDocument(doc)" 
-                        class="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition"
-                        title="Löschen">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <ng-template #noDocuments>
-          <p class="text-center text-gray-500">Noch keine Dokumente hochgeladen</p>
-        </ng-template>
-      </div>
-    </div>
-  </div>
-
-  <ng-template #loading>
-    <div class="text-center text-gray-500">Lade Bewerbungsdetails...</div>
+    </div> </div>
+  <ng-template #loadingApp>
+    <div class="text-center text-gray-500 py-20">Lade Bewerbungsdetails...</div>
   </ng-template>
 </div>
