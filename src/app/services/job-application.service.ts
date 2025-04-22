@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, map } from 'rxjs';
-import { Application, Event, Stat } from '../models/job-tracker.models'; // Skill entfernt
+import { BehaviorSubject, Observable, of, map, combineLatest } from 'rxjs';
+import { Application, Event, Stat, Note, Communication, FollowUpReminder } from '../models/job-tracker.models';
 
 const INITIAL_APPLICATIONS: Application[] = [
   { id: '1', company: 'TechSolutions GmbH', location: 'München', position: 'Senior Angular Dev', status: 'Gespräch', date: 'Heute', color: 'bg-gradient-to-r from-purple-600 to-pink-500' },
@@ -149,6 +149,156 @@ export class JobApplicationService {
   getEvents(): Observable<Event[]> {
     // 'isToday' wird hier nicht mehr explizit behandelt, da Datum vorhanden
     return of(this.eventsData);
+  }
+
+  // Notes Management
+  private notesSubject = new BehaviorSubject<Note[]>([]);
+  notes$ = this.notesSubject.asObservable();
+
+  getNotesForApplication(applicationId: string): Observable<Note[]> {
+    return this.notes$.pipe(
+      map(notes => notes.filter(note => note.applicationId === applicationId))
+    );
+  }
+
+  addNote(applicationId: string, content: string): Observable<Note> {
+    const newNote: Note = {
+      id: Date.now().toString(),
+      applicationId,
+      content,
+      createdAt: new Date()
+    };
+    
+    const currentNotes = this.notesSubject.getValue();
+    this.notesSubject.next([...currentNotes, newNote]);
+    return of(newNote);
+  }
+
+  updateNote(id: string, content: string): Observable<Note> {
+    const currentNotes = this.notesSubject.getValue();
+    const index = currentNotes.findIndex(note => note.id === id);
+    
+    if (index !== -1) {
+      const updatedNote = {
+        ...currentNotes[index],
+        content,
+        updatedAt: new Date()
+      };
+      
+      const updatedNotes = [
+        ...currentNotes.slice(0, index),
+        updatedNote,
+        ...currentNotes.slice(index + 1)
+      ];
+      
+      this.notesSubject.next(updatedNotes);
+      return of(updatedNote);
+    }
+    
+    throw new Error('Note not found');
+  }
+
+  deleteNote(id: string): Observable<void> {
+    const currentNotes = this.notesSubject.getValue();
+    const updatedNotes = currentNotes.filter(note => note.id !== id);
+    this.notesSubject.next(updatedNotes);
+    return of(undefined);
+  }
+
+  // Communication Management
+  private communicationsSubject = new BehaviorSubject<Communication[]>([]);
+  communications$ = this.communicationsSubject.asObservable();
+
+  getCommunicationsForApplication(applicationId: string): Observable<Communication[]> {
+    return this.communications$.pipe(
+      map(comms => comms.filter(comm => comm.applicationId === applicationId))
+    );
+  }
+
+  addCommunication(applicationId: string, communication: Omit<Communication, 'id' | 'createdAt' | 'applicationId'>): Observable<Communication> {
+    const newComm: Communication = {
+      id: Date.now().toString(),
+      applicationId,
+      ...communication,
+      createdAt: new Date()
+    };
+    
+    const currentComms = this.communicationsSubject.getValue();
+    this.communicationsSubject.next([...currentComms, newComm]);
+    return of(newComm);
+  }
+
+  // Follow-up Reminders Management
+  private remindersSubject = new BehaviorSubject<FollowUpReminder[]>([]);
+  reminders$ = this.remindersSubject.asObservable();
+
+  getRemindersForApplication(applicationId: string): Observable<FollowUpReminder[]> {
+    return this.reminders$.pipe(
+      map(reminders => reminders.filter(reminder => reminder.applicationId === applicationId))
+    );
+  }
+
+  addReminder(applicationId: string, date: Date, reminderText: string): Observable<FollowUpReminder> {
+    const newReminder: FollowUpReminder = {
+      id: Date.now().toString(),
+      applicationId,
+      date,
+      reminderText,
+      isCompleted: false,
+      createdAt: new Date()
+    };
+    
+    const currentReminders = this.remindersSubject.getValue();
+    this.remindersSubject.next([...currentReminders, newReminder]);
+    return of(newReminder);
+  }
+
+  toggleReminderCompletion(id: string): Observable<FollowUpReminder> {
+    const currentReminders = this.remindersSubject.getValue();
+    const index = currentReminders.findIndex(reminder => reminder.id === id);
+    
+    if (index !== -1) {
+      const updatedReminder = {
+        ...currentReminders[index],
+        isCompleted: !currentReminders[index].isCompleted
+      };
+      
+      const updatedReminders = [
+        ...currentReminders.slice(0, index),
+        updatedReminder,
+        ...currentReminders.slice(index + 1)
+      ];
+      
+      this.remindersSubject.next(updatedReminders);
+      return of(updatedReminder);
+    }
+    
+    throw new Error('Reminder not found');
+  }
+
+  // Neue Methode für Applications mit Activity
+  getApplicationsWithActivity(): Observable<Application[]> {
+    return combineLatest([
+      this.applicationsSubject.asObservable(),
+      this.notes$,
+      this.communications$,
+      this.reminders$
+    ]).pipe(
+      map(([applications, notes, communications, reminders]) => {
+        return applications.map(app => {
+          const hasNotes = notes.some(note => note.applicationId === app.id);
+          const hasCommunications = communications.some(comm => comm.applicationId === app.id);
+          const hasReminders = reminders.some(reminder => reminder.applicationId === app.id);
+          
+          return {
+            ...app,
+            hasNotes,
+            hasCommunications,
+            hasReminders
+          };
+        });
+      })
+    );
   }
 
 }
