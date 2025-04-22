@@ -5,6 +5,11 @@
     <p class="text-base text-gray-400">Überblick über deine aktuellen Bewerbungsaktivitäten</p>
   </div>
 
+  <div *ngIf="feedbackMessage"
+       class="mb-4 p-3 rounded-md bg-green-800 border border-green-600 text-green-100 text-sm shadow-md">
+    {{ feedbackMessage }}
+  </div>
+
   <div class="flex flex-row space-x-6 mb-8">
     <app-card *ngFor="let stat of stats; let i = index"
               [borderColor]="stat.borderColor"
@@ -100,8 +105,8 @@
                   [ngClass]="event.color">
                 <div class="flex justify-between items-center">
                   <h4 class="font-bold text-white text-sm">{{ event.title }}</h4>
-                  <span [ngClass]="event.isToday ? 'text-pink-500' : 'text-blue-500'" class="text-sm font-bold">
-                    {{ event.isToday ? 'HEUTE' : 'MORGEN' }}
+                  <span [ngClass]="getEventDayLabelClass(event.date)" class="text-sm font-bold">
+                    {{ getEventDayLabel(event.date) }}
                   </span>
                 </div>
                 <p class="text-gray-300 text-sm">{{ event.company }}</p>
