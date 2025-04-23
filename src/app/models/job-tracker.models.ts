@@ -89,3 +89,14 @@ export interface TimelineItem {
   title?: string;
   icon?: string;
 }
+
+export interface Pattern {
+  id: string;
+  name: string;
+  type: 'cover' | 'resume' | 'email' | 'note';
+  content: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  tags?: string[];
+  isDefault?: boolean;
+}
