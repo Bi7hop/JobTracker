@@ -1,0 +1,39 @@
+<div class="fixed inset-0 bg-black/70 z-40" (click)="onClose()"></div>
+
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="relative bg-gray-800 rounded-lg shadow-xl border border-gray-700 w-full max-w-2xl mx-auto">
+    <div class="flex items-center justify-between p-4 border-b border-gray-700">
+      <h3 class="text-lg font-semibold text-white">Pattern Preview: {{ pattern.name }}</h3>
+      <button (click)="onClose()" class="text-gray-400 hover:text-white transition">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+          <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="p-4">
+      <div class="flex mb-4">
+        <span class="px-2 py-1 rounded-full text-xs font-medium" [ngClass]="getTypeColor(pattern.type)">
+          {{ getTypeLabel(pattern.type) }}
+        </span>
+        <span *ngFor="let tag of pattern.tags" class="ml-2 px-2 py-1 bg-gray-800 text-gray-400 text-xs rounded-full">
+          {{ tag }}
+        </span>
+      </div>
+      
+      <div class="bg-white text-gray-900 p-4 rounded whitespace-pre-wrap">
+        {{ pattern.content }}
+      </div>
+    </div>
+
+    <div class="flex justify-between p-4 border-t border-gray-700">
+      <button (click)="useInApplication()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded transition">
+        Use in Application
+      </button>
+      
+      <button (click)="onClose()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
