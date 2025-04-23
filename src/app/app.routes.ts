@@ -42,6 +42,21 @@ export const routes: Routes = [
     title: 'JobTracker - Kalender'
   },
   {
+    path: 'patterns',
+    loadComponent: () => import('./features/patterns/patterns.component').then(m => m.PatternsComponent),
+    title: 'JobTracker - Patterns'
+  },
+  {
+    path: 'patterns/edit/:id',
+    loadComponent: () => import('./features/patterns/pattern-editor/pattern-editor.component').then(m => m.PatternEditorComponent),
+    title: 'JobTracker - Edit Pattern'
+  },
+  {
+    path: 'patterns/new',
+    loadComponent: () => import('./features/patterns/pattern-editor/pattern-editor.component').then(m => m.PatternEditorComponent),
+    title: 'JobTracker - New Pattern'
+  },
+  {
     path: '**',
     redirectTo: 'dashboard'
   }
