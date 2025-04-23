@@ -1,0 +1,100 @@
+<div class="container mx-auto p-8 max-w-4xl">
+    <div class="mb-6">
+      <div class="flex items-center gap-4">
+        <a routerLink="/patterns" class="text-gray-400 hover:text-white transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+          </svg>
+        </a>
+        <h2 class="text-2xl font-bold">{{ isEditMode ? 'Edit Pattern' : 'Create New Pattern' }}</h2>
+      </div>
+      <div class="w-48 h-1 bg-gradient-to-r from-purple-600 to-pink-500 mt-2 ml-10"></div>
+    </div>
+  
+    <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+      <form [formGroup]="patternForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2">
+            <label for="name" class="block text-sm font-medium text-gray-300 mb-1">Pattern Name</label>
+            <input type="text" id="name" formControlName="name" 
+                  class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  [ngClass]="{'border-red-500': submitted && f['name'].errors}">
+            <div *ngIf="submitted && f['name'].errors" class="text-red-500 text-xs mt-1">
+              <span *ngIf="f['name'].errors['required']">Name is required.</span>
+            </div>
+          </div>
+  
+          <div>
+            <label for="type" class="block text-sm font-medium text-gray-300 mb-1">Pattern Type</label>
+            <select id="type" formControlName="type"
+                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              <option value="cover">Cover Letter</option>
+              <option value="resume">Resume</option>
+              <option value="email">Email</option>
+              <option value="note">Note</option>
+            </select>
+          </div>
+        </div>
+  
+        <div>
+          <label for="content" class="block text-sm font-medium text-gray-300 mb-1">Content</label>
+          <textarea id="content" formControlName="content" rows="15"
+                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white font-mono focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                   [ngClass]="{'border-red-500': submitted && f['content'].errors}"></textarea>
+          <div *ngIf="submitted && f['content'].errors" class="text-red-500 text-xs mt-1">
+            <span *ngIf="f['content'].errors['required']">Content is required.</span>
+          </div>
+          <div class="mt-2 text-xs text-gray-400">
+            <p>Use placeholders like [NAME], [COMPANY], [POSITION], [DATE] in square brackets.</p>
+          </div>
+        </div>
+  
+        <div>
+          <label for="tags" class="block text-sm font-medium text-gray-300 mb-1">Tags (comma separated)</label>
+          <input type="text" id="tags" formControlName="tags" 
+                 class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                 placeholder="e.g. IT, Frontend, Berlin">
+        </div>
+  
+        <div class="flex items-center">
+          <input type="checkbox" id="isDefault" formControlName="isDefault" 
+                 class="h-5 w-5 text-purple-600 rounded border-gray-600 bg-gray-700 focus:ring-purple-500 cursor-pointer">
+          <label for="isDefault" class="ml-2 text-sm text-gray-300 cursor-pointer">
+            Set as default pattern for this type
+          </label>
+        </div>
+  
+        <div class="flex justify-end space-x-4 pt-4">
+          <button type="button" (click)="cancel()" 
+                  class="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-gray-200 transition duration-300">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  
+    <div *ngIf="previewMode" class="mt-6 bg-gray-900 rounded-lg border border-gray-800 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-white">Preview</h3>
+        <button (click)="togglePreview()" class="text-gray-400 hover:text-white transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+      <div class="bg-white text-gray-900 p-4 rounded whitespace-pre-wrap">
+        {{ patternForm.get('content')?.value }}
+      </div>
+    </div>
+  
+    <div class="fixed bottom-4 right-4">
+      <button (click)="togglePreview()" 
+              class="px-4 py-2 rounded-md bg-gray-800 hover:bg-gray-700 text-white shadow-lg transition">
+        {{ previewMode ? 'Hide Preview' : 'Show Preview' }}
+      </button>
+    </div>
+  </div>
