@@ -17,8 +17,8 @@ interface NavItem {
 export class HeaderComponent {
   navItems: NavItem[] = [
     { label: 'Dashboard', route: '/dashboard' },
-    { label: 'Applications', route: '/applications' },
-    // { label: 'Documents', route: '/documents' },
-    { label: 'Calendar', route: '/calendar' }
+    { label: 'Übersicht', route: '/applications' },
+    { label: 'Vorlagen', route: '/patterns' },
+    { label: 'Kalender', route: '/calendar' }
   ];
 }
