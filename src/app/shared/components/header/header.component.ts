@@ -18,7 +18,7 @@ export class HeaderComponent {
   navItems: NavItem[] = [
     { label: 'Dashboard', route: '/dashboard' },
     { label: 'Applications', route: '/applications' },
-    { label: 'Documents', route: '/documents' },
+    // { label: 'Documents', route: '/documents' },
     { label: 'Calendar', route: '/calendar' }
   ];
 }
