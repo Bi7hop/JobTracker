@@ -1,56 +1,56 @@
-<div class="container mx-auto p-8">
-  <div class="mb-6">
-    <h2 class="text-3xl font-bold mb-2">Pattern Management</h2>
-    <div class="w-48 h-1 bg-gradient-to-r from-purple-600 to-pink-500 mb-4"></div>
-    <p class="text-base text-gray-400">Manage your application patterns and use them in new applications</p>
+<div class="container mx-auto p-4 sm:p-6 lg:p-8"> <div class="mb-6">
+  <h2 class="text-3xl font-bold mb-2">Pattern Management</h2>
+  <div class="w-48 h-1 bg-gradient-to-r from-purple-600 to-pink-500 mb-4"></div>
+  <p class="text-base text-gray-400">Manage your application patterns and use them in new applications</p>
+</div>
+
+<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+
+  <div class="flex flex-wrap gap-2">
+    <button (click)="setActiveType('all')"
+            class="px-4 py-2 rounded-md transition"
+            [ngClass]="activeType === 'all' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+      All
+    </button>
+    <button (click)="setActiveType('cover')"
+            class="px-4 py-2 rounded-md transition"
+            [ngClass]="activeType === 'cover' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+      Cover Letters
+    </button>
+    <button (click)="setActiveType('resume')"
+            class="px-4 py-2 rounded-md transition"
+            [ngClass]="activeType === 'resume' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+      Resumes
+    </button>
+     <button (click)="setActiveType('email')"
+             class="px-4 py-2 rounded-md transition"
+             [ngClass]="activeType === 'email' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+      Emails
+    </button>
+    <button (click)="setActiveType('note')"
+            class="px-4 py-2 rounded-md transition"
+            [ngClass]="activeType === 'note' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+      Notes
+    </button>
   </div>
 
-  <div class="flex justify-between items-center mb-6">
-    <div class="flex space-x-2">
-      <button (click)="setActiveType('all')"
-              class="px-4 py-2 rounded-md transition"
-              [ngClass]="activeType === 'all' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
-        All
-      </button>
-      <button (click)="setActiveType('cover')"
-              class="px-4 py-2 rounded-md transition"
-              [ngClass]="activeType === 'cover' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
-        Cover Letters
-      </button>
-      <button (click)="setActiveType('resume')"
-              class="px-4 py-2 rounded-md transition"
-              [ngClass]="activeType === 'resume' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
-        Resumes
-      </button>
-       <button (click)="setActiveType('email')"
-              class="px-4 py-2 rounded-md transition"
-              [ngClass]="activeType === 'email' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
-        Emails
-      </button>
-      <button (click)="setActiveType('note')"
-              class="px-4 py-2 rounded-md transition"
-              [ngClass]="activeType === 'note' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
-        Notes
-      </button>
-    </div>
+  <a routerLink="/patterns/new"
+     class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded transition duration-300 w-full sm:w-auto text-center"> + New Pattern
+  </a>
+</div>
 
-    <a routerLink="/patterns/new"
-       class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded transition duration-300">
-      + New Pattern
-    </a>
-  </div>
+<app-pattern-list
+    [patterns]="(filteredPatterns$ | async) || []"
+    (previewPatternRequest)="previewPattern($event)"
+    (duplicatePatternRequest)="duplicatePattern($event)"
+    (setDefaultPatternRequest)="setDefaultPattern($event)"
+    (deletePatternRequest)="deletePattern($event)">
+</app-pattern-list>
 
-  <app-pattern-list
-      [patterns]="(filteredPatterns$ | async) || []"
-      (previewPatternRequest)="previewPattern($event)"
-      (duplicatePatternRequest)="duplicatePattern($event)"
-      (setDefaultPatternRequest)="setDefaultPattern($event)"
-      (deletePatternRequest)="deletePattern($event)">
-  </app-pattern-list>
+<app-pattern-preview
+  *ngIf="previewedPattern"
+  [pattern]="previewedPattern"
+  (close)="closePreview()">
+</app-pattern-preview>
 
-  <app-pattern-preview
-    *ngIf="previewedPattern"
-    [pattern]="previewedPattern"
-    (close)="closePreview()">
-  </app-pattern-preview>
 </div>
