@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms'; 
 import { Observable } from 'rxjs';
 import { JobApplicationService } from '../../services/job-application.service';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -16,10 +16,15 @@ import {
   TimelineItemType
 } from '../../models/job-tracker.models';
 
+interface TabOption {
+  key: string;
+  label: string;
+}
+
 @Component({
   selector: 'app-application-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule], 
   templateUrl: './application-detail.component.html',
   styleUrls: ['./application-detail.component.scss']
 })
@@ -53,6 +58,14 @@ export class ApplicationDetailComponent implements OnInit {
   newCommunicationDateString = this.formatDateForInput(this.newCommunication.date);
   newReminderDateString = this.formatDateForInput(this.newReminder.date);
 
+  tabOptions: TabOption[] = [
+    { key: 'timeline', label: 'Timeline' },
+    { key: 'notes', label: 'Notizen' },
+    { key: 'communications', label: 'Kommunikation' },
+    { key: 'reminders', label: 'Erinnerungen' },
+    { key: 'documents', label: 'Dokumente' }
+  ];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -76,8 +89,8 @@ export class ApplicationDetailComponent implements OnInit {
     }
   }
 
-  setActiveTab(tab: 'timeline' | 'notes' | 'communications' | 'reminders' | 'documents'): void {
-    this.activeTab = tab;
+  setActiveTab(tabKey: string): void {
+    this.activeTab = tabKey as 'timeline' | 'notes' | 'communications' | 'reminders' | 'documents';
   }
 
   addNote(): void {
@@ -157,7 +170,7 @@ export class ApplicationDetailComponent implements OnInit {
 
   uploadDocument(): void {
     if (this.selectedFile && this.applicationId) {
-      if (this.selectedFile.size > 10 * 1024 * 1024) {
+      if (this.selectedFile.size > 10 * 1024 * 1024) { 
         this.notificationService.showError('Datei ist zu groß (max. 10MB).');
         return;
       }
@@ -309,6 +322,7 @@ export class ApplicationDetailComponent implements OnInit {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
+
   getDocumentTypeLabel(type: Document['type'] | string): string {
     switch (type) {
       case 'lebenslauf': return 'Lebenslauf';
@@ -343,19 +357,15 @@ export class ApplicationDetailComponent implements OnInit {
   isStatusChangeItem(item: TimelineItem): item is TimelineItem & { data: StatusChange } {
     return item.type === 'StatusChange';
   }
-
   isNoteItem(item: TimelineItem): item is TimelineItem & { data: Note } {
     return item.type === 'Note';
   }
-
   isCommunicationItem(item: TimelineItem): item is TimelineItem & { data: Communication } {
     return item.type === 'Communication';
   }
-
   isReminderItem(item: TimelineItem): item is TimelineItem & { data: FollowUpReminder } {
     return item.type === 'Reminder';
   }
-
   isDocumentItem(item: TimelineItem): item is TimelineItem & { data: Document } {
     return item.type === 'Document';
   }
