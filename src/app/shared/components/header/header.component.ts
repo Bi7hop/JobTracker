@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { NotificationService } from '../../services/notification.service';
 
 interface NavItem {
   label: string;
@@ -23,8 +24,14 @@ export class HeaderComponent {
     { label: 'Dashboard', route: '/dashboard' },
     { label: 'Übersicht', route: '/applications' }, 
     { label: 'Vorlagen', route: '/patterns' },     
-    { label: 'Kalender', route: '/calendar' }       
+    { label: 'Kalender', route: '/calendar' },
+    { label: 'Erinnerungen', route: '/reminders' }       
   ];
+
+  constructor(
+    private router: Router,
+    private notificationService: NotificationService
+  ) {}
 
   toggleMobileMenu(): void {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
@@ -46,5 +53,33 @@ export class HeaderComponent {
 
   closeUserDropdown(): void {
      this.isUserDropdownOpen = false;
+  }
+
+  navigateToProfile(): void {
+    this.closeUserDropdown();
+    this.notificationService.showInfo('Das Benutzerprofil wird in einer zukünftigen Version verfügbar sein.');
+  }
+
+  navigateToApplications(): void {
+    this.closeUserDropdown();
+    this.router.navigate(['/applications']);
+  }
+
+  navigateToSettings(): void {
+    this.closeUserDropdown();
+    this.notificationService.showInfo('Die Einstellungen werden in einer zukünftigen Version verfügbar sein.');
+  }
+
+  navigateToReminders(): void {
+    this.closeUserDropdown();
+    this.router.navigate(['/reminders']);
+  }
+
+  logout(): void {
+    this.closeUserDropdown();
+    this.notificationService.showSuccess('Du wurdest erfolgreich abgemeldet.', 'Abmeldung');
+    setTimeout(() => {
+      this.router.navigate(['/dashboard']);
+    }, 1500);
   }
 }
