@@ -7,6 +7,7 @@ import { JobApplicationService } from '../../services/job-application.service';
 import { Application, Event, Stat } from '../../models/job-tracker.models';
 import { NotificationService } from '../../shared/services/notification.service';
 import { ConfirmationDialogComponent } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { RemindersWidgetComponent } from '../../shared/components/reminders-widget/reminders-widget.component';
 import Chart from 'chart.js/auto';
 
 @Component({
@@ -16,7 +17,8 @@ import Chart from 'chart.js/auto';
     CommonModule,
     CardComponent,
     RouterLink,
-    ConfirmationDialogComponent
+    ConfirmationDialogComponent,
+    RemindersWidgetComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
