@@ -56,6 +56,8 @@ export interface FollowUpReminder {
   reminderText: string;
   isCompleted: boolean;
   createdAt: Date;
+  notificationShown?: boolean;  
+  notifyBefore?: number;       
 }
 
 export interface Document {
