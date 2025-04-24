@@ -189,39 +189,86 @@
         </ng-template>
        </div>
 
-      <div *ngSwitchCase="'reminders'" class="space-y-6">
-         <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
-            <h3 class="text-lg font-semibold text-white mb-4">Neue Erinnerung hinzufügen</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label for="rem-date" class="block text-sm font-medium text-gray-300 mb-1">Fälligkeitsdatum</label><input id="rem-date" type="date" [(ngModel)]="newReminderDateString" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></div>
-                <div class="md:col-span-2"><label for="rem-text" class="block text-sm font-medium text-gray-300 mb-1">Erinnerungstext</label><textarea id="rem-text" [(ngModel)]="newReminder.reminderText" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500" rows="2" placeholder="Erinnerung eingeben..."></textarea></div>
-            </div>
-            <div class="mt-4 flex justify-end"><button (click)="addReminder()" [disabled]="!newReminder.reminderText.trim()" class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">Hinzufügen</button></div>
-        </div>
-         <div *ngIf="reminders$ | async as reminders; else loadingReminders">
-            <div *ngIf="reminders.length > 0; else noReminders">
-                <h3 class="text-lg font-semibold text-white mb-4">Anstehende Erinnerungen</h3>
-                <div class="space-y-4">
-                    <div *ngFor="let reminder of reminders" class="bg-gray-900 rounded-lg border border-gray-800 p-4 transition" [ngClass]="{'opacity-60 border-l-4 border-green-600': reminder.isCompleted, 'border-l-4 border-yellow-600': !reminder.isCompleted}">
-                        <div class="flex items-start">
-                            <input type="checkbox" [id]="'reminder-' + reminder.id" [checked]="reminder.isCompleted" (change)="toggleReminderCompletion(reminder.id)" class="mt-1 mr-3 h-5 w-5 text-purple-600 rounded border-gray-600 bg-gray-700 focus:ring-purple-500 cursor-pointer">
-                            <label [for]="'reminder-' + reminder.id" class="flex-1 cursor-pointer">
-                                <p class="text-gray-300" [ngClass]="{'line-through': reminder.isCompleted}">{{ reminder.reminderText }}</p>
-                                <p class="text-sm text-gray-500 mt-1">Fällig: {{ reminder.date | date:'dd.MM.yyyy' }} <span class="text-xs ml-1">(Erstellt: {{ reminder.createdAt | date:'dd.MM.yyyy' }})</span></p>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <ng-template #noReminders>
-                <p class="text-center text-gray-500 py-10">Keine Erinnerungen für diese Bewerbung vorhanden.</p>
-            </ng-template>
-        </div>
-         <ng-template #loadingReminders>
-            <p class="text-center text-gray-500 py-10">Lade Erinnerungen...</p>
-        </ng-template>
-      </div>
-
+       <div *ngSwitchCase="'reminders'" class="space-y-6">
+        <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+           <h3 class="text-lg font-semibold text-white mb-4">Neue Erinnerung hinzufügen</h3>
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div class="grid grid-cols-2 gap-2">
+                   <div>
+                       <label for="rem-date" class="block text-sm font-medium text-gray-300 mb-1">Fälligkeitsdatum</label>
+                       <input id="rem-date" type="date" [(ngModel)]="newReminderDateString" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                   </div>
+                   <div>
+                       <label for="rem-time" class="block text-sm font-medium text-gray-300 mb-1">Uhrzeit</label>
+                       <input id="rem-time" type="time" [(ngModel)]="newReminderTimeString" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                   </div>
+               </div>
+               
+               <div>
+                 <label for="rem-notify" class="block text-sm font-medium text-gray-300 mb-1">Benachrichtigung</label>
+                 <select id="rem-notify" [(ngModel)]="newReminderNotifyBefore" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                   <option [ngValue]="0">Zum Fälligkeitszeitpunkt</option>
+                   <option [ngValue]="15">15 Minuten vorher</option>
+                   <option [ngValue]="30">30 Minuten vorher</option>
+                   <option [ngValue]="60">1 Stunde vorher</option>
+                   <option [ngValue]="180">3 Stunden vorher</option>
+                   <option [ngValue]="360">6 Stunden vorher</option>
+                   <option [ngValue]="720">12 Stunden vorher</option>
+                   <option [ngValue]="1440">1 Tag vorher</option>
+                   <option [ngValue]="2880">2 Tage vorher</option>
+                   <option [ngValue]="10080">1 Woche vorher</option>
+                 </select>
+               </div>
+               
+               <div class="md:col-span-2">
+                   <label for="rem-text" class="block text-sm font-medium text-gray-300 mb-1">Erinnerungstext</label>
+                   <textarea id="rem-text" [(ngModel)]="newReminder.reminderText" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500" rows="2" placeholder="Erinnerung eingeben..."></textarea>
+               </div>
+           </div>
+           <div class="mt-4 flex justify-end">
+               <button (click)="addReminder()" [disabled]="!newReminder.reminderText.trim()" class="px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">Hinzufügen</button>
+           </div>
+       </div>
+        <div *ngIf="reminders$ | async as reminders; else loadingReminders">
+           <div *ngIf="reminders.length > 0; else noReminders">
+               <h3 class="text-lg font-semibold text-white mb-4">Anstehende Erinnerungen</h3>
+               <div class="space-y-4">
+                   <div *ngFor="let reminder of reminders" class="bg-gray-900 rounded-lg border border-gray-800 p-4 transition" [ngClass]="{'opacity-60 border-l-4 border-green-600': reminder.isCompleted, 'border-l-4 border-yellow-600': !reminder.isCompleted}">
+                       <div class="flex items-start">
+                           <input type="checkbox" [id]="'reminder-' + reminder.id" [checked]="reminder.isCompleted" (change)="toggleReminderCompletion(reminder.id)" class="mt-1 mr-3 h-5 w-5 text-purple-600 rounded border-gray-600 bg-gray-700 focus:ring-purple-500 cursor-pointer">
+                           <label [for]="'reminder-' + reminder.id" class="flex-1 cursor-pointer">
+                               <p class="text-gray-300" [ngClass]="{'line-through': reminder.isCompleted}">{{ reminder.reminderText }}</p>
+                               <p class="text-sm text-gray-500 mt-1">Fällig: {{ reminder.date | date:'dd.MM.yyyy, HH:mm' }} Uhr <span class="text-xs ml-1">(Erstellt: {{ reminder.createdAt | date:'dd.MM.yyyy' }})</span></p>
+                               <p *ngIf="reminder.notifyBefore" class="text-xs text-purple-400 mt-1">
+                                 Benachrichtigung: 
+                                 <span *ngIf="reminder.notifyBefore === 0">Zum Fälligkeitszeitpunkt</span>
+                                 <span *ngIf="reminder.notifyBefore === 15">15 Minuten vorher</span>
+                                 <span *ngIf="reminder.notifyBefore === 30">30 Minuten vorher</span>
+                                 <span *ngIf="reminder.notifyBefore === 60">1 Stunde vorher</span>
+                                 <span *ngIf="reminder.notifyBefore === 180">3 Stunden vorher</span>
+                                 <span *ngIf="reminder.notifyBefore === 360">6 Stunden vorher</span>
+                                 <span *ngIf="reminder.notifyBefore === 720">12 Stunden vorher</span>
+                                 <span *ngIf="reminder.notifyBefore === 1440">1 Tag vorher</span>
+                                 <span *ngIf="reminder.notifyBefore === 2880">2 Tage vorher</span>
+                                 <span *ngIf="reminder.notifyBefore === 10080">1 Woche vorher</span>
+                                 <span *ngIf="reminder.notifyBefore && ![0, 15, 30, 60, 180, 360, 720, 1440, 2880, 10080].includes(reminder.notifyBefore)">
+                                   {{ reminder.notifyBefore }} Minuten vorher
+                                 </span>
+                               </p>
+                           </label>
+                       </div>
+                   </div>
+               </div>
+           </div>
+           <ng-template #noReminders>
+               <p class="text-center text-gray-500 py-10">Keine Erinnerungen für diese Bewerbung vorhanden.</p>
+           </ng-template>
+       </div>
+        <ng-template #loadingReminders>
+           <p class="text-center text-gray-500 py-10">Lade Erinnerungen...</p>
+       </ng-template>
+     </div>
+     
       <div *ngSwitchCase="'documents'" class="space-y-6">
          <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
             <h3 class="text-lg font-semibold text-white mb-4">Dokument hochladen</h3>
