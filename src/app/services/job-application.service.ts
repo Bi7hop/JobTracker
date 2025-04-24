@@ -266,10 +266,16 @@ export class JobApplicationService {
     );
   }
 
-  addReminder(applicationId: string, date: Date, reminderText: string): Observable<FollowUpReminder> {
+  addReminder(applicationId: string, date: Date, reminderText: string, notifyBefore: number = 60): Observable<FollowUpReminder> {
     const newReminder: FollowUpReminder = {
       id: `rem-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-      applicationId, date, reminderText, isCompleted: false, createdAt: new Date()
+      applicationId, 
+      date, 
+      reminderText, 
+      isCompleted: false, 
+      createdAt: new Date(),
+      notificationShown: false,
+      notifyBefore: notifyBefore
     };
     const currentReminders = this.remindersSubject.getValue();
     this.remindersSubject.next([...currentReminders, newReminder]);
@@ -379,5 +385,102 @@ export class JobApplicationService {
         });
       })
     );
+  }
+
+  getAllReminders(): Observable<(FollowUpReminder & { application?: Application })[]> {
+    return combineLatest([
+      this.reminders$,
+      this.applications$
+    ]).pipe(
+      map(([reminders, applications]) => {
+        return reminders.map(reminder => {
+          const application = applications.find(app => app.id == reminder.applicationId);
+          return { ...reminder, application };
+        }).sort((a, b) => {
+          if (a.isCompleted !== b.isCompleted) {
+            return a.isCompleted ? 1 : -1;
+          }
+          return a.date.getTime() - b.date.getTime();
+        });
+      })
+    );
+  }
+
+  updateReminderDate(id: string, minutesToAdd: number): Observable<FollowUpReminder | undefined> {
+    const currentReminders = this.remindersSubject.getValue();
+    const index = currentReminders.findIndex(reminder => reminder.id === id);
+    
+    if (index !== -1) {
+      const currentDate = new Date(currentReminders[index].date);
+      const newDate = new Date(currentDate.getTime() + minutesToAdd * 60000);
+      
+      const updatedReminder = { 
+        ...currentReminders[index], 
+        date: newDate,
+        notificationShown: false 
+      } as FollowUpReminder;
+      
+      const updatedReminders = [
+        ...currentReminders.slice(0, index),
+        updatedReminder,
+        ...currentReminders.slice(index + 1)
+      ];
+      
+      this.remindersSubject.next(updatedReminders);
+      return of(updatedReminder);
+    }
+    
+    return of(undefined);
+  }
+
+  getDueReminders(): Observable<(FollowUpReminder & { application?: Application })[]> {
+    return combineLatest([
+      this.reminders$,
+      this.applications$
+    ]).pipe(
+      map(([reminders, applications]) => {
+        const now = new Date();
+        
+        return reminders
+          .filter(reminder => {
+            if (reminder.isCompleted || (reminder as any).notificationShown) {
+              return false;
+            }
+            
+            const reminderDate = new Date(reminder.date);
+            const notifyBefore = (reminder as any).notifyBefore || 0;
+            
+            const notificationTime = new Date(reminderDate.getTime() - notifyBefore * 60000);
+            
+            return notificationTime <= now;
+          })
+          .map(reminder => {
+            const application = applications.find(app => app.id == reminder.applicationId);
+            return { ...reminder, application };
+          });
+      })
+    );
+  }
+
+  markReminderNotificationShown(id: string): Observable<void> {
+    const currentReminders = this.remindersSubject.getValue();
+    const index = currentReminders.findIndex(reminder => reminder.id === id);
+    
+    if (index !== -1) {
+      const updatedReminder = { 
+        ...currentReminders[index], 
+        notificationShown: true 
+      } as FollowUpReminder;
+      
+      const updatedReminders = [
+        ...currentReminders.slice(0, index),
+        updatedReminder,
+        ...currentReminders.slice(index + 1)
+      ];
+      
+      this.remindersSubject.next(updatedReminders);
+    }
+    
+    return of(undefined);
   }
 }
