@@ -8,7 +8,7 @@
       <h1 class="text-2xl font-bold text-white hidden sm:block">JobTracker</h1>
     </div>
 
-    <nav class="hidden md:flex">
+    <nav class="hidden lg:flex">
       <ul class="flex gap-6">
         <li *ngFor="let item of navItems">
           <a
@@ -43,21 +43,23 @@
           [class.scale-95]="!isUserDropdownOpen"
           >
           <ul class="py-1">
-            <li (click)="closeUserDropdown()" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer">
+            <li (click)="navigateToProfile()" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer">
               <span>Mein Profil</span>
             </li>
-            <li (click)="closeUserDropdown()" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer">
+            <li (click)="navigateToApplications()" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer">
               <span>Meine Bewerbungen</span>
             </li>
-            <li (click)="closeUserDropdown()" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer">
+            <li (click)="navigateToSettings()" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer">
               <span>Einstellungen</span>
             </li>
-            <li (click)="closeUserDropdown()" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer border-t border-gray-700 mt-1">
+            <li (click)="logout()" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer border-t border-gray-700 mt-1">
               <span>Abmelden</span>
             </li>
           </ul>
         </div>
-      </div> <button (click)="toggleMobileMenu()" class="md:hidden p-2 rounded hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-600" aria-label="Hauptmenü öffnen/schließen">
+      </div>
+
+      <button (click)="toggleMobileMenu()" class="lg:hidden p-2 rounded hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-600" aria-label="Hauptmenü öffnen/schließen">
         <svg *ngIf="!isMobileMenuOpen" class="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
         </svg>
@@ -67,7 +69,7 @@
       </button>
 
     </div> </div> <div *ngIf="isMobileMenuOpen"
-       class="absolute top-full left-0 right-0 bg-gray-950 border-b border-gray-800 shadow-lg md:hidden z-30">
+       class="absolute top-full left-0 right-0 bg-gray-950 border-b border-gray-800 shadow-lg lg:hidden z-30">
     <nav class="container mx-auto px-4 py-4">
         <ul class="flex flex-col gap-4">
             <li *ngFor="let item of navItems">
@@ -75,7 +77,8 @@
                    routerLinkActive="text-white font-semibold bg-gray-800 rounded"
                    [routerLinkActiveOptions]="{exact: true}"
                    class="block py-2 px-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-all duration-200"
-                   (click)="closeMobileMenu()"> {{item.label}}
+                   (click)="closeMobileMenu()">
+                    {{item.label}}
                 </a>
             </li>
         </ul>
