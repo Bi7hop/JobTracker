@@ -1,75 +1,75 @@
 <div class="container mx-auto p-4 md:p-8 relative">
-    <div class="flex flex-col md:flex-row justify-between items-center mb-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
-      <div class="flex items-center space-x-2 mb-4 md:mb-0">
-        <button class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition" (click)="changeDate(-1)"> &lt; </button>
-        <button class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition" (click)="goToToday()">Heute</button>
-        <button class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition" (click)="changeDate(1)"> &gt; </button>
-      </div>
-  
-      <h3 class="text-xl font-semibold text-white order-first md:order-none mb-4 md:mb-0">
-        {{ viewDate | calendarDate:(view + 'ViewTitle'):locale }}
-      </h3>
-  
-      <div class="flex items-center space-x-2">
-        <button class="px-3 py-1 rounded transition" [class.bg-purple-600]="view === CalendarView.Month" [class.bg-gray-700]="view !== CalendarView.Month" [class.hover:bg-gray-600]="view !== CalendarView.Month" (click)="setView(CalendarView.Month)">Monat</button>
-        <button class="px-3 py-1 rounded transition" [class.bg-purple-600]="view === CalendarView.Week" [class.bg-gray-700]="view !== CalendarView.Week" [class.hover:bg-gray-600]="view !== CalendarView.Week" (click)="setView(CalendarView.Week)">Woche</button>
-        <button class="px-3 py-1 rounded transition" [class.bg-purple-600]="view === CalendarView.Day" [class.bg-gray-700]="view !== CalendarView.Day" [class.hover:bg-gray-600]="view !== CalendarView.Day" (click)="setView(CalendarView.Day)">Tag</button>
-      </div>
+
+  <div class="flex flex-col md:flex-row justify-between items-center mb-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
+    <div class="flex items-center space-x-2 mb-4 md:mb-0">
+      <button class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition" (click)="changeDate(-1)"> &lt; </button>
+      <button class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition" (click)="goToToday()">Heute</button>
+      <button class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded transition" (click)="changeDate(1)"> &gt; </button>
     </div>
-  
-    <div [ngSwitch]="view" class="bg-gray-800 p-0.5 rounded-lg border border-gray-700 text-sm text-gray-200">
-      <mwl-calendar-month-view
-        *ngSwitchCase="CalendarView.Month"
-        [viewDate]="viewDate"
-        [events]="events"
-        [locale]="locale"
-        [weekStartsOn]="weekStartsOn"
-        (eventClicked)="handleEvent('Clicked', $event.event)"
-        [cellTemplate]="customCellTemplate"> </mwl-calendar-month-view>
-  
-      <mwl-calendar-week-view
-        *ngSwitchCase="CalendarView.Week"
-        [viewDate]="viewDate"
-        [events]="events"
-        [locale]="locale"
-        [weekStartsOn]="weekStartsOn"
-        (eventClicked)="handleEvent('Clicked', $event.event)">
-      </mwl-calendar-week-view>
-  
-      <mwl-calendar-day-view
-        *ngSwitchCase="CalendarView.Day"
-        [viewDate]="viewDate"
-        [events]="events"
-        [locale]="locale"
-        (eventClicked)="handleEvent('Clicked', $event.event)">
-      </mwl-calendar-day-view>
+
+    <h3 class="text-xl font-semibold text-white order-first md:order-none mb-4 md:mb-0">
+      {{ viewDate | calendarDate:(view + 'ViewTitle'):locale }}
+    </h3>
+
+    <div class="flex items-center space-x-2">
+      <button class="px-3 py-1 rounded transition" [class.bg-purple-600]="view === CalendarView.Month" [class.bg-gray-700]="view !== CalendarView.Month" [class.hover:bg-gray-600]="view !== CalendarView.Month" (click)="setView(CalendarView.Month)">Monat</button>
+      <button class="px-3 py-1 rounded transition" [class.bg-purple-600]="view === CalendarView.Week" [class.bg-gray-700]="view !== CalendarView.Week" [class.hover:bg-gray-600]="view !== CalendarView.Week" (click)="setView(CalendarView.Week)">Woche</button>
+      <button class="px-3 py-1 rounded transition" [class.bg-purple-600]="view === CalendarView.Day" [class.bg-gray-700]="view !== CalendarView.Day" [class.hover:bg-gray-600]="view !== CalendarView.Day" (click)="setView(CalendarView.Day)">Tag</button>
     </div>
-  
-    <ng-template #customCellTemplate let-day="day" let-locale="locale">
-        <div class="cal-cell-top">
-          <span class="cal-day-number" [class.cal-today]="day.isToday">
-            {{ day.date | calendarDate:'monthViewDayNumber':locale }}
-          </span>
-        </div>
-        <div class="cal-events mt-1 space-y-0.5 overflow-hidden">
-            <div *ngFor="let event of day.events | slice:0:2"
-                 class="cal-event text-xs truncate px-1 py-0.5 rounded"
-                 [style.backgroundColor]="$any(event).color?.secondary"
-                 [style.borderColor]="$any(event).color?.primary"
-                 [style.color]="'#FFF'"
-                 [title]="$any(event).title"> {{ $any(event).title }}
-            </div>
-            <div *ngIf="day.events.length > 2" class="text-xs text-gray-400 mt-1">
-              +{{ day.events.length - 2 }} weitere
-            </div>
-          </div>
-      </ng-template>
-  
-  
-    <app-event-detail-modal
-      *ngIf="selectedEvent"
-      [event]="selectedEvent"
-      (close)="closeEventModal()">
-    </app-event-detail-modal>
-  
   </div>
+
+  <div [ngSwitch]="view" class="bg-gray-800 p-0.5 rounded-lg border border-gray-700 text-sm text-gray-200">
+    <mwl-calendar-month-view
+      *ngSwitchCase="CalendarView.Month"
+      [viewDate]="viewDate"
+      [events]="events"
+      [locale]="locale"
+      [weekStartsOn]="weekStartsOn"
+      (eventClicked)="handleEvent('Clicked', $event.event)"
+      [cellTemplate]="customCellTemplate"> </mwl-calendar-month-view>
+
+    <mwl-calendar-week-view
+      *ngSwitchCase="CalendarView.Week"
+      [viewDate]="viewDate"
+      [events]="events"
+      [locale]="locale"
+      [weekStartsOn]="weekStartsOn"
+      (eventClicked)="handleEvent('Clicked', $event.event)">
+    </mwl-calendar-week-view>
+
+    <mwl-calendar-day-view
+      *ngSwitchCase="CalendarView.Day"
+      [viewDate]="viewDate"
+      [events]="events"
+      [locale]="locale"
+      (eventClicked)="handleEvent('Clicked', $event.event)">
+    </mwl-calendar-day-view>
+  </div>
+
+  <ng-template #customCellTemplate let-day="day" let-locale="locale">
+      <div class="cal-cell-top">
+        <span class="cal-day-number" [class.cal-today]="day.isToday">
+          {{ day.date | calendarDate:'monthViewDayNumber':locale }}
+        </span>
+      </div>
+      <div class="cal-events mt-1 space-y-0.5 overflow-hidden">
+          <div *ngFor="let event of day.events | slice:0:2"
+               class="cal-event text-xs truncate px-1 py-0.5 rounded"
+               [style.backgroundColor]="$any(event).color?.secondary"
+               [style.borderColor]="$any(event).color?.primary"
+               [style.color]="'#FFF'"
+               [title]="$any(event).title"> {{ $any(event).title }} </div>
+          <div *ngIf="day.events.length > 2" class="text-xs text-gray-400 mt-1">
+            +{{ day.events.length - 2 }} weitere
+          </div>
+        </div>
+      </ng-template>
+
+
+  <app-event-detail-modal
+    *ngIf="selectedEvent"
+    [event]="selectedEvent"
+    (close)="closeEventModal()">
+  </app-event-detail-modal>
+
+</div>
