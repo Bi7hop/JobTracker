@@ -57,7 +57,9 @@ export class ApplicationDetailComponent implements OnInit {
   activeTab: 'timeline' | 'notes' | 'communications' | 'reminders' | 'documents' = 'timeline';
   newCommunicationDateString = this.formatDateForInput(this.newCommunication.date);
   newReminderDateString = this.formatDateForInput(this.newReminder.date);
+  newReminderTimeString: string = this.getCurrentTimeString();
 
+  newReminderNotifyBefore: number = 60; 
   tabOptions: TabOption[] = [
     { key: 'timeline', label: 'Timeline' },
     { key: 'notes', label: 'Notizen' },
@@ -138,9 +140,26 @@ export class ApplicationDetailComponent implements OnInit {
   }
 
   addReminder(): void {
-    this.newReminder.date = new Date(this.newReminderDateString);
+    const dateParts = this.newReminderDateString.split('-');
+    const timeParts = this.newReminderTimeString.split(':');
+    
+    const reminderDate = new Date(
+      parseInt(dateParts[0]), // Jahr
+      parseInt(dateParts[1]) - 1, // Monat (0-basiert)
+      parseInt(dateParts[2]), // Tag
+      parseInt(timeParts[0]), // Stunde
+      parseInt(timeParts[1])  // Minute
+    );
+    
+    this.newReminder.date = reminderDate;
+    
     if (this.newReminder.reminderText.trim() && this.applicationId) {
-      this.jobAppService.addReminder(this.applicationId, this.newReminder.date, this.newReminder.reminderText).subscribe({
+      this.jobAppService.addReminder(
+        this.applicationId, 
+        this.newReminder.date, 
+        this.newReminder.reminderText,
+        this.newReminderNotifyBefore
+      ).subscribe({
         next: () => {
           this.notificationService.showSuccess('Erinnerung hinzugefügt');
           this.resetReminderForm();
@@ -278,6 +297,11 @@ export class ApplicationDetailComponent implements OnInit {
     }
   }
 
+  private getCurrentTimeString(): string {
+    const now = new Date();
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  }
+
   private formatDateForInput(date: Date): string {
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -305,6 +329,8 @@ export class ApplicationDetailComponent implements OnInit {
       reminderText: ''
     };
     this.newReminderDateString = this.formatDateForInput(today);
+    this.newReminderTimeString = this.getCurrentTimeString();
+    this.newReminderNotifyBefore = 60; 
   }
 
   private resetUploadForm(): void {
