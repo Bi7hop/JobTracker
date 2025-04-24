@@ -57,6 +57,11 @@ export const routes: Routes = [
     title: 'JobTracker - New Pattern'
   },
   {
+    path: 'reminders',
+    loadComponent: () => import('./features/reminders/reminders.component').then(m => m.RemindersComponent),
+    title: 'JobTracker - Erinnerungen'
+  },
+  {
     path: '**',
     redirectTo: 'dashboard'
   }
