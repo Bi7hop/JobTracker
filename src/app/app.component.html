@@ -6,4 +6,12 @@
     <router-outlet></router-outlet>
   </main>
   
+  <app-reminder-notification-modal
+    *ngIf="reminderCheckService.dueReminder$ | async as dueReminder"
+    [reminder]="dueReminder"
+    (close)="closeReminderNotification()"
+    (markComplete)="markReminderComplete($event)"
+    (snooze)="snoozeReminder($event)">
+  </app-reminder-notification-modal>
+  
 </div>
