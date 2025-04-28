@@ -25,6 +25,7 @@ export class HeaderComponent {
     { label: 'Übersicht', route: '/applications' }, 
     { label: 'Vorlagen', route: '/patterns' },     
     { label: 'Kalender', route: '/calendar' },
+    { label: 'Checklisten', route: '/checklists' },
     { label: 'Erinnerungen', route: '/reminders' }       
   ];
 
