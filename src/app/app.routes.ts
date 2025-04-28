@@ -62,6 +62,11 @@ export const routes: Routes = [
     title: 'JobTracker - Erinnerungen'
   },
   {
+    path: 'checklists',
+    loadComponent: () => import('./features/checklists/checklists.component').then(m => m.ChecklistsComponent),
+    title: 'JobTracker - Checklisten'
+  },
+  {
     path: '**',
     redirectTo: 'dashboard'
   }
