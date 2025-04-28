@@ -1,0 +1,395 @@
+<div class="container mx-auto p-4 sm:p-6 lg:p-8">
+    <div class="mb-6">
+      <h2 class="text-3xl font-bold mb-2">Bewerbungs-Checklisten</h2>
+      <div class="w-48 h-1 bg-gradient-to-r from-purple-600 to-pink-500 mb-4"></div>
+      <p class="text-base text-gray-400">Verwalte und überwache deine Bewerbungsschritte mit Checklisten</p>
+    </div>
+  
+    <div class="mb-6 bg-gray-900 rounded-lg border border-gray-800 p-6">
+      <h3 class="text-xl font-bold text-white mb-4">Wähle eine Bewerbung</h3>
+      
+      <div *ngIf="applications$ | async as applications; else loadingApplications">
+        <div *ngIf="applications.length > 0; else noApplications" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div *ngFor="let app of applications" 
+               (click)="selectApplication(app)" 
+               class="p-4 rounded-lg border cursor-pointer transition duration-200"
+               [class.border-purple-500]="selectedApplication?.id === app.id"
+               [class.bg-gray-800]="selectedApplication?.id === app.id"
+               [class.border-gray-700]="selectedApplication?.id !== app.id"
+               [class.bg-gray-900]="selectedApplication?.id !== app.id"
+               [class.hover:border-gray-600]="selectedApplication?.id !== app.id">
+            
+            <div class="flex items-center space-x-3">
+              <div class="w-4 h-4 rounded-full" [ngClass]="app.color"></div>
+              <div>
+                <h4 class="font-medium text-white">{{ app.company }}</h4>
+                <p class="text-sm text-gray-400">{{ app.position }}</p>
+              </div>
+            </div>
+            
+            <div *ngIf="checklistProgress[app.id || ''] !== undefined" class="mt-3">
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <span>Fortschritt</span>
+                <span>{{ checklistProgress[app.id || ''] }}%</span>
+              </div>
+              <div class="w-full bg-gray-700 rounded-full h-2">
+                <div class="bg-gradient-to-r from-purple-600 to-pink-500 h-2 rounded-full"
+                     [style.width]="checklistProgress[app.id || ''] + '%'"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <ng-template #noApplications>
+          <div class="text-center py-6 text-gray-500">
+            <p>Keine Bewerbungen gefunden. Erstelle zuerst eine Bewerbung.</p>
+            <a routerLink="/applications/new" class="mt-4 inline-block px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-md">
+              Neue Bewerbung erstellen
+            </a>
+          </div>
+        </ng-template>
+      </div>
+      
+      <ng-template #loadingApplications>
+        <div class="text-center py-6 text-gray-500">
+          <p>Lade Bewerbungen...</p>
+        </div>
+      </ng-template>
+    </div>
+  
+    <div *ngIf="selectedApplication && !isCreatingChecklist" class="mt-8">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+          <h3 class="text-xl font-bold text-white">Checkliste für {{ selectedApplication.company }}</h3>
+          <p class="text-gray-400">{{ selectedApplication.position }}</p>
+        </div>
+        
+        <div class="flex space-x-3">
+          <button *ngIf="(checklist$ | async)?.length === 0" 
+                  (click)="showTemplateSelection()" 
+                  class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white rounded transition">
+            Checkliste erstellen
+          </button>
+          <button *ngIf="(checklist$ | async)?.length !== 0" 
+                  (click)="addChecklistItem()" 
+                  class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition">
+            + Aufgabe hinzufügen
+          </button>
+          <button *ngIf="(checklist$ | async)?.length !== 0" 
+                  (click)="saveAsTemplate()" 
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition">
+            Als Vorlage speichern
+          </button>
+        </div>
+      </div>
+  
+      <div *ngIf="checklist$ | async as checklistItems">
+        <ng-container *ngIf="checklistItems.length > 0; else emptyChecklist">
+
+          <div class="mb-6 bg-gray-900 rounded-lg border border-gray-800 p-6">
+            <div class="flex justify-between items-center mb-3">
+              <h4 class="text-lg font-semibold text-white">Gesamtfortschritt</h4>
+              <span class="text-lg font-bold text-white">{{ overallProgress }}%</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-3 mb-4">
+              <div class="bg-gradient-to-r from-purple-600 to-pink-500 h-3 rounded-full"
+                   [style.width]="overallProgress + '%'"></div>
+            </div>
+  
+            <div *ngIf="categoryProgress && categoryProgress.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              <div *ngFor="let category of categoryProgress" class="bg-gray-800 rounded p-3">
+                <div class="flex justify-between items-center mb-2">
+                  <h5 class="text-sm font-medium text-white">{{ category.category }}</h5>
+                  <span class="text-sm text-gray-300">{{ category.progress }}%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                  <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
+                       [style.width]="category.progress + '%'"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <div *ngFor="let category of getUniqueCategories(checklistItems)" class="mb-6">
+            <h4 class="text-lg font-semibold text-white mb-3 flex items-center">
+              <span class="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
+              {{ category }}
+            </h4>
+            
+            <div class="space-y-2">
+              <div *ngFor="let item of filterByCategory(checklistItems, category)" 
+                   class="bg-gray-900 rounded-lg border border-gray-800 hover:border-gray-700 p-4 transition">
+                <div class="flex items-start">
+                  <input type="checkbox" 
+                         [id]="'task-' + item.id" 
+                         [checked]="item.isCompleted" 
+                         (change)="toggleChecklistItem(item.id)"
+                         class="mt-1 mr-3 h-5 w-5 text-purple-600 rounded border-gray-600 bg-gray-700 focus:ring-purple-500 cursor-pointer">
+                  
+                  <div class="flex-1">
+                    <div class="flex justify-between mb-1">
+                      <label [for]="'task-' + item.id" 
+                             class="text-white cursor-pointer font-medium"
+                             [class.line-through]="item.isCompleted"
+                             [class.text-gray-400]="item.isCompleted">
+                        {{ item.task }}
+                      </label>
+                      
+                      <div class="flex space-x-2">
+                        <span [ngClass]="getPriorityBadgeClass(item.priority)"
+                              class="text-xs px-2 py-1 rounded-full">
+                          {{ getPriorityLabel(item.priority) }}
+                        </span>
+                        
+                        <div class="flex space-x-1">
+                          <button (click)="editChecklistItem(item)" 
+                                  class="text-blue-400 hover:text-blue-300 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button (click)="deleteChecklistItem(item.id)"
+                                  class="text-red-400 hover:text-red-300 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div *ngIf="item.notes" class="mt-2 text-sm text-gray-400 bg-gray-800 rounded p-2">
+                      {{ item.notes }}
+                    </div>
+                    
+                    <div *ngIf="item.dueDate" class="mt-2 text-xs text-gray-500">
+                      Fällig bis: {{ item.dueDate | date:'dd.MM.yyyy' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+        
+        <ng-template #emptyChecklist>
+          <div class="text-center py-12 bg-gray-900 rounded-lg border border-gray-800">
+            <svg class="mx-auto h-12 w-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-300">Keine Checkliste vorhanden</h3>
+            <p class="mt-1 text-sm text-gray-500">
+              Erstelle eine Checkliste für diese Bewerbung, um alle wichtigen Schritte zu verfolgen.
+            </p>
+            <div class="mt-6">
+              <button (click)="showTemplateSelection()" 
+                      class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700">
+                Checkliste erstellen
+              </button>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  
+    <div *ngIf="isCreatingChecklist" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+      <div class="bg-gray-900 rounded-lg border border-gray-700 p-6 max-w-2xl w-full">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-white">Wähle eine Vorlage</h3>
+          <button (click)="cancelTemplateSelection()" class="text-gray-400 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div class="mb-4">
+          <div class="flex space-x-2 mb-4">
+            <button *ngFor="let cat of templateCategories" 
+                    (click)="selectTemplateCategory(cat.value)"
+                    [class.bg-purple-600]="selectedTemplateCategory === cat.value"
+                    [class.bg-gray-700]="selectedTemplateCategory !== cat.value"
+                    class="px-3 py-1 rounded text-white text-sm transition">
+              {{ cat.label }}
+            </button>
+          </div>
+          
+          <div *ngIf="availableTemplates$ | async as templates">
+            <div *ngIf="templates.length > 0; else noTemplates" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+              <div *ngFor="let template of templates" 
+                   (click)="selectTemplate(template)"
+                   [class.border-purple-500]="selectedTemplate?.id === template.id"
+                   [class.bg-gray-800]="selectedTemplate?.id === template.id"
+                   class="border border-gray-700 rounded-lg p-4 cursor-pointer hover:border-gray-600 transition">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h4 class="font-medium text-white">{{ template.name }}</h4>
+                    <p class="text-sm text-gray-400">{{ template.description }}</p>
+                  </div>
+                  <span *ngIf="template.isDefault" class="px-2 py-1 bg-purple-900/50 text-purple-400 text-xs rounded-full">
+                    Standard
+                  </span>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">
+                  {{ template.items.length }} Aufgaben
+                </div>
+              </div>
+            </div>
+            
+            <ng-template #noTemplates>
+              <div class="text-center py-6 text-gray-500">
+                <p>Keine Vorlagen für diese Kategorie gefunden.</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+          <button (click)="cancelTemplateSelection()" 
+                  class="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition">
+            Abbrechen
+          </button>
+          <button (click)="createChecklistFromTemplate()" 
+                  [disabled]="!selectedTemplate"
+                  [class.opacity-50]="!selectedTemplate"
+                  [class.cursor-not-allowed]="!selectedTemplate"
+                  class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded hover:from-purple-700 hover:to-pink-600 transition">
+            Checkliste erstellen
+          </button>
+        </div>
+      </div>
+    </div>
+  
+    <div *ngIf="isEditingChecklistItem" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+      <div class="bg-gray-900 rounded-lg border border-gray-700 p-6 max-w-xl w-full">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-white">{{ editingExistingItem ? 'Aufgabe bearbeiten' : 'Neue Aufgabe' }}</h3>
+          <button (click)="cancelChecklistItemEdit()" class="text-gray-400 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <form [formGroup]="checklistItemForm" (ngSubmit)="saveChecklistItem()" class="space-y-4">
+          <div>
+            <label for="task" class="block text-sm font-medium text-gray-300 mb-1">Aufgabe</label>
+            <input type="text" id="task" formControlName="task"
+                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            <div *ngIf="checklistItemForm.get('task')?.invalid && checklistItemForm.get('task')?.touched"
+                 class="text-red-500 text-xs mt-1">
+              Aufgabe ist ein Pflichtfeld
+            </div>
+          </div>
+          
+          <div>
+            <label for="category" class="block text-sm font-medium text-gray-300 mb-1">Kategorie</label>
+            <input type="text" id="category" formControlName="category" 
+                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            <div *ngIf="checklistItemForm.get('category')?.invalid && checklistItemForm.get('category')?.touched"
+                 class="text-red-500 text-xs mt-1">
+              Kategorie ist ein Pflichtfeld
+            </div>
+          </div>
+          
+          <div>
+            <label for="priority" class="block text-sm font-medium text-gray-300 mb-1">Priorität</label>
+            <select id="priority" formControlName="priority"
+                    class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              <option value="high">Hoch</option>
+              <option value="medium">Mittel</option>
+              <option value="low">Niedrig</option>
+            </select>
+          </div>
+          
+          <div>
+            <label for="dueDate" class="block text-sm font-medium text-gray-300 mb-1">Fälligkeitsdatum (optional)</label>
+            <input type="date" id="dueDate" formControlName="dueDate"
+                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+          </div>
+          
+          <div>
+            <label for="notes" class="block text-sm font-medium text-gray-300 mb-1">Notizen (optional)</label>
+            <textarea id="notes" formControlName="notes" rows="3"
+                      class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></textarea>
+          </div>
+          
+          <div class="flex justify-end space-x-3 pt-4">
+            <button type="button" (click)="cancelChecklistItemEdit()"
+                    class="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition">
+              Abbrechen
+            </button>
+            <button type="submit" [disabled]="checklistItemForm.invalid"
+                    class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded hover:from-purple-700 hover:to-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+              Speichern
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  
+    <div *ngIf="isSavingAsTemplate" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+      <div class="bg-gray-900 rounded-lg border border-gray-700 p-6 max-w-xl w-full">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-white">Als Vorlage speichern</h3>
+          <button (click)="cancelSaveAsTemplate()" class="text-gray-400 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <form [formGroup]="templateForm" (ngSubmit)="confirmSaveAsTemplate()" class="space-y-4">
+          <div>
+            <label for="templateName" class="block text-sm font-medium text-gray-300 mb-1">Name der Vorlage</label>
+            <input type="text" id="templateName" formControlName="name"
+                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            <div *ngIf="templateForm.get('name')?.invalid && templateForm.get('name')?.touched"
+                 class="text-red-500 text-xs mt-1">
+              Name ist ein Pflichtfeld
+            </div>
+          </div>
+          
+          <div>
+            <label for="templateDescription" class="block text-sm font-medium text-gray-300 mb-1">Beschreibung</label>
+            <textarea id="templateDescription" formControlName="description" rows="2"
+                      class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"></textarea>
+            <div *ngIf="templateForm.get('description')?.invalid && templateForm.get('description')?.touched"
+                 class="text-red-500 text-xs mt-1">
+              Beschreibung ist ein Pflichtfeld
+            </div>
+          </div>
+          
+          <div>
+            <label for="templateCategory" class="block text-sm font-medium text-gray-300 mb-1">Kategorie</label>
+            <select id="templateCategory" formControlName="category"
+                    class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              <option value="standard">Allgemeine Bewerbung</option>
+              <option value="initiativ">Initiativbewerbung</option>
+              <option value="praktikum">Praktikum</option>
+              <option value="international">International</option>
+            </select>
+          </div>
+          
+          <div class="flex items-center mt-2">
+            <input type="checkbox" id="isDefault" formControlName="isDefault"
+                   class="h-4 w-4 text-purple-600 rounded border-gray-600 bg-gray-700 focus:ring-purple-500">
+            <label for="isDefault" class="ml-2 text-sm text-gray-300">
+              Als Standard für diese Kategorie setzen
+            </label>
+          </div>
+          
+          <div class="flex justify-end space-x-3 pt-4">
+            <button type="button" (click)="cancelSaveAsTemplate()"
+                    class="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition">
+              Abbrechen
+            </button>
+            <button type="submit" [disabled]="templateForm.invalid"
+                    class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded hover:from-purple-700 hover:to-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+              Vorlage speichern
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
