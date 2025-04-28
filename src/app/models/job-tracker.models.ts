@@ -102,3 +102,24 @@ export interface Pattern {
   tags?: string[];
   isDefault?: boolean;
 }
+
+export interface ChecklistItem {
+  id: string;
+  applicationId: string;
+  task: string;
+  isCompleted: boolean;
+  category: string;
+  order: number;
+  dueDate?: Date;
+  notes?: string;
+  priority?: 'low' | 'medium' | 'high';
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  name: string;
+  description: string;
+  items: Omit<ChecklistItem, 'id' | 'applicationId'>[];
+  isDefault?: boolean;
+  category: 'standard' | 'initiativ' | 'praktikum' | 'international';
+}
