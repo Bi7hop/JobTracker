@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common'; 
 import { RouterLink } from '@angular/router';
 import { JobApplicationService } from '../../../services/job-application.service';
 import { NotificationService } from '../../services/notification.service';
@@ -9,13 +9,13 @@ import { Observable, map } from 'rxjs';
 @Component({
   selector: 'app-reminders-widget',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, DatePipe], 
   templateUrl: './reminders-widget.component.html',
   styleUrl: './reminders-widget.component.scss'
 })
 export class RemindersWidgetComponent implements OnInit {
   upcomingReminders$!: Observable<(FollowUpReminder & { application?: Application })[]>;
-  
+
   constructor(
     private jobAppService: JobApplicationService,
     private notificationService: NotificationService
@@ -28,10 +28,16 @@ export class RemindersWidgetComponent implements OnInit {
   loadUpcomingReminders(): void {
     this.upcomingReminders$ = this.jobAppService.getAllReminders().pipe(
       map(reminders => {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
         return reminders
-          .filter(reminder => !reminder.isCompleted) 
+          .filter(reminder =>
+              !reminder.isCompleted &&
+              new Date(reminder.date) >= todayStart 
+          )
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) 
-          .slice(0, 5); 
+          .slice(0, 5);
       })
     );
   }
@@ -40,7 +46,6 @@ export class RemindersWidgetComponent implements OnInit {
     this.jobAppService.toggleReminderCompletion(id).subscribe({
       next: () => {
         this.notificationService.showSuccess('Erinnerungsstatus geändert');
-        this.loadUpcomingReminders(); 
       },
       error: (err) => {
         console.error(err);
@@ -49,36 +54,40 @@ export class RemindersWidgetComponent implements OnInit {
     });
   }
 
-  isOverdue(date: Date): boolean {
-    return new Date(date) < new Date();
-  }
-
   getRelativeTimeString(date: Date): string {
     const now = new Date();
     const reminderDate = new Date(date);
-    const diffTime = reminderDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) {
-      return `${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? 'Tag' : 'Tage'} überfällig`;
-    } else if (diffDays === 0) {
-      return 'Heute fällig';
-    } else if (diffDays === 1) {
-      return 'Morgen fällig';
-    } else {
-      return `In ${diffDays} Tagen fällig`;
-    }
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const reminderDayStart = new Date(reminderDate.getFullYear(), reminderDate.getMonth(), reminderDate.getDate());
+    const diffTime = reminderDayStart.getTime() - todayStart.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    const isActuallyOverdue = reminderDate.getTime() < now.getTime();
+
+     if (isActuallyOverdue && diffDays <= 0) { 
+       return 'Überfällig';
+     } else if (diffDays === 0) {
+       return 'Heute fällig'; 
+     } else if (diffDays === 1) {
+       return 'Morgen fällig';
+     } else {
+       return `In ${diffDays} Tagen`; 
+     }
   }
 
   getPriorityClass(date: Date): string {
     const now = new Date();
     const reminderDate = new Date(date);
-    const diffTime = reminderDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return 'bg-red-900 text-red-400';
-    if (diffDays === 0) return 'bg-orange-900 text-orange-400';
-    if (diffDays <= 2) return 'bg-yellow-900 text-yellow-400';
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const reminderDayStart = new Date(reminderDate.getFullYear(), reminderDate.getMonth(), reminderDate.getDate());
+
+    const diffTime = reminderDayStart.getTime() - todayStart.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
+    const isActuallyOverdue = reminderDate.getTime() < now.getTime();
+
+    if (isActuallyOverdue && diffDays <= 0) return 'bg-red-900 text-red-400'; 
+    if (diffDays === 0) return 'bg-orange-900 text-orange-400'; 
+    if (diffDays === 1) return 'bg-yellow-900 text-yellow-400'; 
+    if (diffDays <= 3) return 'bg-yellow-900/70 text-yellow-500'; 
     return 'bg-blue-900 text-blue-400';
   }
 }
