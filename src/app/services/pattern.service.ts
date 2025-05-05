@@ -1,126 +1,257 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, from, map, catchError, switchMap } from 'rxjs';
+import { SupabaseService } from './supabase.service';
 import { Pattern } from '../models/job-tracker.models';
-
-const INITIAL_PATTERNS: Pattern[] = [
-  {
-    id: 'pat-1',
-    name: 'Standard-Anschreiben für IT-Stellen',
-    type: 'cover',
-    content: `Sehr geehrte Damen und Herren,
-
-ich möchte mich hiermit auf die Position [POSITION] bei [UNTERNEHMEN] bewerben.
-
-Mit freundlichen Grüßen  
-[NAME]`,
-    createdAt: new Date('2025-04-01'),
-    tags: ['IT', 'Standard'],
-    isDefault: true
-  },
-  {
-    id: 'pat-2',
-    name: 'Follow-up E-Mail nach dem Vorstellungsgespräch',
-    type: 'email',
-    content: `Sehr geehrte/r [KONTAKT],
-
-vielen Dank für das angenehme Gespräch am [DATUM]. Ich freue mich auf Ihre Rückmeldung.
-
-Beste Grüße  
-[NAME]`,
-    createdAt: new Date('2025-04-05'),
-    tags: ['Follow-up', 'Vorstellungsgespräch']
-  }
-];
 
 @Injectable({
   providedIn: 'root'
 })
 export class PatternService {
-  private patternsSubject = new BehaviorSubject<Pattern[]>(INITIAL_PATTERNS);
+  private patternsSubject = new BehaviorSubject<Pattern[]>([]);
   public patterns$ = this.patternsSubject.asObservable();
   private patternToDelete: Pattern | null = null;
 
-  constructor() { }
+  constructor(private supabaseService: SupabaseService) {
+    this.loadPatterns();
+  }
+
+  private async loadPatternsAsync(): Promise<Pattern[]> {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('patterns')
+        .select('*');
+
+      if (error) throw error;
+      
+      return (data || []).map((pattern: any) => ({
+        id: pattern.id,
+        name: pattern.name,
+        type: pattern.type,
+        content: pattern.content,
+        createdAt: new Date(pattern.created_at),
+        updatedAt: pattern.updated_at ? new Date(pattern.updated_at) : undefined,
+        tags: pattern.tags || [],
+        isDefault: pattern.is_default || false
+      }));
+    } catch (error) {
+      console.error('Error loading patterns:', error);
+      return [];
+    }
+  }
+
+  private loadPatterns(): void {
+    from(this.loadPatternsAsync()).subscribe(patterns => {
+      this.patternsSubject.next(patterns);
+    });
+  }
 
   getPatterns(): Observable<Pattern[]> {
     return this.patterns$;
   }
 
   getPatternsByType(type: Pattern['type']): Observable<Pattern[]> {
-    return of(this.patternsSubject.getValue().filter(pat => pat.type === type));
+    return this.patterns$.pipe(
+      map(patterns => patterns.filter(pat => pat.type === type))
+    );
+  }
+
+  async getPatternByIdAsync(id: string): Promise<Pattern | undefined> {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('patterns')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      if (!data) return undefined;
+      
+      return {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        content: data.content,
+        createdAt: new Date(data.created_at),
+        updatedAt: data.updated_at ? new Date(data.updated_at) : undefined,
+        tags: data.tags || [],
+        isDefault: data.is_default || false
+      };
+    } catch (error) {
+      console.error(`Error getting pattern with id ${id}:`, error);
+      return undefined;
+    }
   }
 
   getPatternById(id: string): Observable<Pattern | undefined> {
-    return of(this.patternsSubject.getValue().find(pat => pat.id === id));
+    return from(this.getPatternByIdAsync(id));
+  }
+
+  async addPatternAsync(pattern: Omit<Pattern, 'id' | 'createdAt'>): Promise<Pattern> {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('patterns')
+        .insert([{
+          name: pattern.name,
+          type: pattern.type,
+          content: pattern.content,
+          tags: pattern.tags,
+          is_default: pattern.isDefault || false
+        }])
+        .select();
+
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error('No data returned after insert');
+      
+      const newPattern = data[0];
+      
+      const patternObj: Pattern = {
+        id: newPattern.id,
+        name: newPattern.name,
+        type: newPattern.type,
+        content: newPattern.content,
+        createdAt: new Date(newPattern.created_at),
+        updatedAt: newPattern.updated_at ? new Date(newPattern.updated_at) : undefined,
+        tags: newPattern.tags || [],
+        isDefault: newPattern.is_default || false
+      };
+      
+      const currentPatterns = this.patternsSubject.getValue();
+      this.patternsSubject.next([...currentPatterns, patternObj]);
+      
+      return patternObj;
+    } catch (error) {
+      console.error('Error adding pattern:', error);
+      throw error;
+    }
   }
 
   addPattern(pattern: Omit<Pattern, 'id' | 'createdAt'>): Observable<Pattern> {
-    const newPattern: Pattern = {
-      ...pattern,
-      id: `pat-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      createdAt: new Date()
-    };
+    return from(this.addPatternAsync(pattern));
+  }
 
-    const updatedPatterns = [...this.patternsSubject.getValue(), newPattern];
-    this.patternsSubject.next(updatedPatterns);
-    return of(newPattern);
+  async updatePatternAsync(patternToUpdate: Partial<Pattern> & { id: string }): Promise<Pattern | undefined> {
+    try {
+      const updateData: any = {};
+      
+      if (patternToUpdate.name !== undefined) updateData.name = patternToUpdate.name;
+      if (patternToUpdate.type !== undefined) updateData.type = patternToUpdate.type;
+      if (patternToUpdate.content !== undefined) updateData.content = patternToUpdate.content;
+      if (patternToUpdate.tags !== undefined) updateData.tags = patternToUpdate.tags;
+      if (patternToUpdate.isDefault !== undefined) updateData.is_default = patternToUpdate.isDefault;
+      
+      updateData.updated_at = new Date().toISOString();
+      
+      const { data, error } = await this.supabaseService.client
+        .from('patterns')
+        .update(updateData)
+        .eq('id', patternToUpdate.id)
+        .select();
+
+      if (error) throw error;
+      if (!data || data.length === 0) return undefined;
+      
+      const updatedPattern = data[0];
+      
+      const patternObj: Pattern = {
+        id: updatedPattern.id,
+        name: updatedPattern.name,
+        type: updatedPattern.type,
+        content: updatedPattern.content,
+        createdAt: new Date(updatedPattern.created_at),
+        updatedAt: new Date(updatedPattern.updated_at),
+        tags: updatedPattern.tags || [],
+        isDefault: updatedPattern.is_default || false
+      };
+      
+      const currentPatterns = this.patternsSubject.getValue();
+      this.patternsSubject.next(currentPatterns.map(pattern => 
+        pattern.id === patternObj.id ? patternObj : pattern
+      ));
+      
+      return patternObj;
+    } catch (error) {
+      console.error(`Error updating pattern with id ${patternToUpdate.id}:`, error);
+      return undefined;
+    }
   }
 
   updatePattern(patternToUpdate: Partial<Pattern> & { id: string }): Observable<Pattern | undefined> {
-    const patterns = this.patternsSubject.getValue();
-    const index = patterns.findIndex(p => p.id === patternToUpdate.id);
+    return from(this.updatePatternAsync(patternToUpdate));
+  }
 
-    if (index !== -1) {
-      const updatedPattern: Pattern = {
-        ...patterns[index],
-        ...patternToUpdate,
-        updatedAt: new Date()
-      };
+  async deletePatternAsync(id: string): Promise<boolean> {
+    try {
+      const { error } = await this.supabaseService.client
+        .from('patterns')
+        .delete()
+        .eq('id', id);
 
-      const updatedPatterns = [
-        ...patterns.slice(0, index),
-        updatedPattern,
-        ...patterns.slice(index + 1)
-      ];
-
-      this.patternsSubject.next(updatedPatterns);
-      return of(updatedPattern);
+      if (error) throw error;
+      
+      const currentPatterns = this.patternsSubject.getValue();
+      this.patternsSubject.next(currentPatterns.filter(pattern => pattern.id !== id));
+      
+      return true;
+    } catch (error) {
+      console.error(`Error deleting pattern with id ${id}:`, error);
+      return false;
     }
-
-    return of(undefined);
   }
 
   deletePattern(id: string): Observable<boolean> {
-    const patterns = this.patternsSubject.getValue();
-    const updatedPatterns = patterns.filter(p => p.id !== id);
+    return from(this.deletePatternAsync(id));
+  }
 
-    if (updatedPatterns.length < patterns.length) {
+  async setDefaultPatternAsync(pattern: Pattern): Promise<Pattern | undefined> {
+    try {
+      const { error: unsettingError } = await this.supabaseService.client
+        .from('patterns')
+        .update({ is_default: false })
+        .eq('type', pattern.type);
+
+      if (unsettingError) throw unsettingError;
+      
+      const { data, error } = await this.supabaseService.client
+        .from('patterns')
+        .update({ is_default: true })
+        .eq('id', pattern.id)
+        .select();
+
+      if (error) throw error;
+      if (!data || data.length === 0) return undefined;
+      
+      const updatedPattern = data[0];
+      
+      const patternObj: Pattern = {
+        id: updatedPattern.id,
+        name: updatedPattern.name,
+        type: updatedPattern.type,
+        content: updatedPattern.content,
+        createdAt: new Date(updatedPattern.created_at),
+        updatedAt: updatedPattern.updated_at ? new Date(updatedPattern.updated_at) : undefined,
+        tags: updatedPattern.tags || [],
+        isDefault: true
+      };
+      
+      const currentPatterns = this.patternsSubject.getValue();
+      const updatedPatterns = currentPatterns.map(p => {
+        if (p.type === pattern.type) {
+          return { ...p, isDefault: p.id === pattern.id };
+        }
+        return p;
+      });
+      
       this.patternsSubject.next(updatedPatterns);
-      return of(true);
+      
+      return patternObj;
+    } catch (error) {
+      console.error(`Error setting pattern as default with id ${pattern.id}:`, error);
+      return undefined;
     }
-
-    return of(false);
   }
 
   setDefaultPattern(pattern: Pattern): Observable<Pattern | undefined> {
-    const patterns = this.patternsSubject.getValue();
-    let updatedPatterns = [...patterns];
-
-    updatedPatterns = updatedPatterns.map(p => {
-      if (p.type === pattern.type && p.isDefault && p.id !== pattern.id) {
-        return { ...p, isDefault: false };
-      }
-      return p;
-    });
-
-    const index = updatedPatterns.findIndex(p => p.id === pattern.id);
-    if (index !== -1) {
-      updatedPatterns[index] = { ...updatedPatterns[index], isDefault: true };
-      this.patternsSubject.next(updatedPatterns);
-      return of(updatedPatterns[index]);
-    }
-
-    return of(undefined);
+    return from(this.setDefaultPatternAsync(pattern));
   }
 
   setPatternToDelete(pattern: Pattern): void {
