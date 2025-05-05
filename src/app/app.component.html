@@ -1,6 +1,6 @@
 <div class="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
   
-  <app-header></app-header>
+  <app-header *ngIf="shouldShowHeader()"></app-header>
   
   <main class="flex-grow px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full"> 
     <router-outlet></router-outlet>
