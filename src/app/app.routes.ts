@@ -66,6 +66,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/checklists/checklists.component').then(m => m.ChecklistsComponent),
     title: 'JobTracker - Checklisten'
   },
+{
+    path: 'landing',
+    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent),
+    title: 'JobTracker - Welcome'
+  },
   {
     path: '**', // Wildcard fängt alles andere ab
     redirectTo: 'dashboard' // Leitet unbekannte Pfade zum Dashboard um
