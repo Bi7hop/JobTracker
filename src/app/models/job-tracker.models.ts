@@ -1,3 +1,4 @@
+// job-tracker.models.ts
 export interface Stat {
   title: string;
   value: number;
@@ -12,8 +13,9 @@ export interface Application {
   location: string;
   position: string;
   status: string;
-  date: string;
+  date: string; 
   color: string;
+  appointmentDate?: string | null;
   hasNotes?: boolean;
   hasCommunications?: boolean;
   hasReminders?: boolean;
@@ -56,8 +58,8 @@ export interface FollowUpReminder {
   reminderText: string;
   isCompleted: boolean;
   createdAt: Date;
-  notificationShown?: boolean;  
-  notifyBefore?: number;       
+  notificationShown?: boolean;
+  notifyBefore?: number;
 }
 
 export interface Document {
