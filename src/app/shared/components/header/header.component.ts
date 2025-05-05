@@ -2,11 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { RouterModule, Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
-
-interface NavItem {
-  label: string;
-  route: string;
-}
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -16,11 +12,10 @@ interface NavItem {
   styleUrl: './header.component.scss' 
 })
 export class HeaderComponent {
-
   isMobileMenuOpen = false;    
   isUserDropdownOpen = false;  
 
-  navItems: NavItem[] = [
+  navItems = [
     { label: 'Dashboard', route: '/dashboard' },
     { label: 'Übersicht', route: '/applications' }, 
     { label: 'Vorlagen', route: '/patterns' },     
@@ -31,7 +26,8 @@ export class HeaderComponent {
 
   constructor(
     private router: Router,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private authService: AuthService
   ) {}
 
   toggleMobileMenu(): void {
@@ -78,9 +74,6 @@ export class HeaderComponent {
 
   logout(): void {
     this.closeUserDropdown();
-    this.notificationService.showSuccess('Du wurdest erfolgreich abgemeldet.', 'Abmeldung');
-    setTimeout(() => {
-      this.router.navigate(['/dashboard']);
-    }, 1500);
+    this.authService.logout();
   }
 }
