@@ -19,7 +19,7 @@
              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
              [class.border-red-500]="applicationForm.get('position')?.invalid && applicationForm.get('position')?.touched">
       <div *ngIf="applicationForm.get('position')?.invalid && applicationForm.get('position')?.touched" class="text-red-500 text-xs mt-1">
-         Position ist ein Pflichtfeld.
+          Position ist ein Pflichtfeld.
       </div>
     </div>
 
@@ -37,17 +37,26 @@
       </select>
     </div>
 
+    <div *ngIf="applicationForm.get('status')?.value === 'Gespräch'">
+      <label for="appointmentDate" class="block text-sm font-medium text-gray-300 mb-1">Datum und Uhrzeit des Gesprächs</label>
+      <input type="datetime-local" id="appointmentDate" formControlName="appointmentDate"
+             class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+             [class.border-red-500]="applicationForm.get('appointmentDate')?.invalid && applicationForm.get('appointmentDate')?.touched">
+      <div *ngIf="applicationForm.get('appointmentDate')?.invalid && applicationForm.get('appointmentDate')?.touched" class="text-red-500 text-xs mt-1">
+        Gesprächstermin ist ein Pflichtfeld für den Status 'Gespräch'.
+      </div>
+    </div>
     <div>
       <label for="date" class="block text-sm font-medium text-gray-300 mb-1">Datum der Bewerbung</label>
       <input type="date" id="date" formControlName="date"
              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
              [class.border-red-500]="applicationForm.get('date')?.invalid && applicationForm.get('date')?.touched">
-       <div *ngIf="applicationForm.get('date')?.invalid && applicationForm.get('date')?.touched" class="text-red-500 text-xs mt-1">
-         Datum ist ein Pflichtfeld.
-       </div>
+        <div *ngIf="applicationForm.get('date')?.invalid && applicationForm.get('date')?.touched" class="text-red-500 text-xs mt-1">
+          Datum ist ein Pflichtfeld.
+        </div>
     </div>
 
-    <div class="flex justify-end space-x-4">
+    <div class="flex justify-end space-x-4 pt-4">
        <button type="button" (click)="cancel()" class="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-gray-200 transition duration-300">
          Abbrechen
        </button>
