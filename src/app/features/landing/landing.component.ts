@@ -39,20 +39,28 @@ export class LandingComponent {
   }
 
   toggleAuth(login: boolean = true): void {
+    this.clearFormFields();
+    
     this.isLogin = login;
     this.showAuth = true;
   }
 
   closeAuth(): void {
     this.showAuth = false;
-
-    this.email = '';
-    this.password = '';
-    this.name = '';
+    this.clearFormFields();
   }
 
   startTracking(): void {
     this.toggleAuth(false); 
+  }
+  
+  clearFormFields(): void {
+    this.email = '';
+    this.password = '';
+    this.name = '';
+    this.passwordConfirm = '';
+    this.showPassword = false;
+    this.showPasswordConfirm = false;
   }
   
   async submitAuth(): Promise<void> {
@@ -66,14 +74,15 @@ export class LandingComponent {
       if (this.isLogin) {
         const success = await this.authService.login(this.email, this.password);
         if (success) {
+          this.clearFormFields();
           this.router.navigate(['/dashboard']);
         }
       } else {
         const success = await this.authService.signup(this.name, this.email, this.password);
         if (success) {
           this.notificationService.showSuccess('Account erfolgreich erstellt! Bitte melde dich jetzt an.');
+          this.clearFormFields();
           this.isLogin = true; 
-          this.password = ''; 
         }
       }
     } finally {
