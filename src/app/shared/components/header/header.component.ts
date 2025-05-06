@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { RouterModule, Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService, UserProfile } from '../../../services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-header',
@@ -11,9 +12,11 @@ import { AuthService } from '../../../services/auth.service';
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss' 
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit, OnDestroy {
   isMobileMenuOpen = false;    
   isUserDropdownOpen = false;  
+  userProfile: UserProfile | null = null;
+  private userSubscription: Subscription | null = null;
 
   navItems = [
     { label: 'Dashboard', route: '/dashboard' },
@@ -29,6 +32,18 @@ export class HeaderComponent {
     private notificationService: NotificationService,
     private authService: AuthService
   ) {}
+
+  ngOnInit(): void {
+    this.userSubscription = this.authService.userProfile$.subscribe(profile => {
+      this.userProfile = profile;
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.userSubscription) {
+      this.userSubscription.unsubscribe();
+    }
+  }
 
   toggleMobileMenu(): void {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
@@ -54,7 +69,7 @@ export class HeaderComponent {
 
   navigateToProfile(): void {
     this.closeUserDropdown();
-    this.notificationService.showInfo('Das Benutzerprofil wird in einer zukünftigen Version verfügbar sein.');
+    this.router.navigate(['/profile']);
   }
 
   navigateToApplications(): void {
