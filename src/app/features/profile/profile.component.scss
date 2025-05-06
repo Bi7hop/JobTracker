@@ -1,0 +1,42 @@
+:host {
+    display: block;
+    min-height: calc(100vh - 64px);
+  }
+
+  @keyframes gradientShift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  
+  input, button, .hover-effect {
+    transition: all 0.3s ease;
+  }
+  
+  .rounded-full {
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+    }
+  }
+  
+  input:disabled, input[readonly] {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  @media (max-width: 768px) {
+    .flex-col-mobile {
+      flex-direction: column;
+    }
+    
+    .w-full-mobile {
+      width: 100%;
+    }
+  }
