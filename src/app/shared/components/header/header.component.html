@@ -28,7 +28,8 @@
       <div class="relative">
         <button (click)="toggleUserDropdown()" class="flex items-center gap-1 cursor-pointer focus:outline-none" aria-label="Benutzermenü öffnen/schließen">
           <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white">
-            MM </div>
+            {{ userProfile?.initials || 'U' }}
+          </div>
           <span class="text-gray-500">▼</span>
         </button>
 
