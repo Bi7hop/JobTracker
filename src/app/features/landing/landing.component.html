@@ -1,28 +1,12 @@
 <div class="min-h-screen bg-gray-950 text-gray-100 flex flex-col relative overflow-hidden">
 
-<header class="py-4 px-8 border-b border-gray-800/80 bg-gray-950/90 backdrop-blur-sm relative z-10">
-    <div class="container mx-auto flex justify-between items-center">
-      <div class="flex items-center gap-3">
+  <header class="py-4 px-8 border-b border-gray-800/80 bg-gray-950/90 backdrop-blur-sm relative z-10">
+    <div class="container mx-auto flex justify-center items-center">
+      <div class="flex justify-center items-center gap-3">
         <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 flex items-center justify-center text-white font-bold">
           JT
         </div>
         <h1 class="text-2xl font-bold text-white">JobTracker</h1>
-      </div>
-      
-      <div class="flex items-center gap-4">
-        <button 
-          (click)="toggleAuth(true)"
-          class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-md transition duration-300"
-        >
-          Login
-        </button>
-        
-        <button 
-          (click)="toggleAuth(false)"
-          class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-medium rounded-md transition duration-300"
-        >
-          Sign Up Free
-        </button>
       </div>
     </div>
   </header>
