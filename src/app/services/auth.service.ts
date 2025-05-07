@@ -8,6 +8,7 @@ export interface UserProfile {
   fullName: string;
   email: string;
   initials: string;
+  userId: string;
 }
 
 @Injectable({
@@ -16,9 +17,17 @@ export interface UserProfile {
 export class AuthService {
   private _isAuthenticated = new BehaviorSubject<boolean>(false);
   private _userProfile = new BehaviorSubject<UserProfile | null>(null);
+  private _profileLoaded = new BehaviorSubject<boolean>(false);
+  private _isDemoUser = new BehaviorSubject<boolean>(false);
   
   public isAuth$ = this._isAuthenticated.asObservable();
   public userProfile$ = this._userProfile.asObservable();
+  public profileLoaded$ = this._profileLoaded.asObservable();
+  public isDemoUser$ = this._isDemoUser.asObservable();
+  
+  // Demo account credentials
+  private readonly DEMO_EMAIL = 'demo@jobtracker.com';
+  private readonly DEMO_PASSWORD = 'demoaccount';
   
   constructor(
     private supabaseService: SupabaseService,
@@ -29,33 +38,63 @@ export class AuthService {
   }
   
   private async checkInitialAuthState(): Promise<void> {
-    const { data } = await this.supabaseService.client.auth.getSession();
-    const isAuthenticated = !!data.session;
-    this._isAuthenticated.next(isAuthenticated);
-    
-    if (isAuthenticated) {
-      await this.loadUserProfile();
+    try {
+      console.log('Checking initial auth state...');
+      const { data } = await this.supabaseService.client.auth.getSession();
+      const isAuthenticated = !!data.session;
+      
+      console.log('User authenticated:', isAuthenticated);
+      this._isAuthenticated.next(isAuthenticated);
+      
+      if (isAuthenticated) {
+        await this.loadUserProfile();
+        // Nach dem Laden des Profils überprüfen, ob es ein Demo-Benutzer ist
+        const currentProfile = this._userProfile.getValue();
+        if (currentProfile && currentProfile.email === this.DEMO_EMAIL) {
+          this._isDemoUser.next(true);
+        }
+      } else {
+        this._profileLoaded.next(false);
+      }
+    } catch (error) {
+      console.error('Error checking initial auth state:', error);
+      this._isAuthenticated.next(false);
+      this._profileLoaded.next(false);
     }
   }
   
   private async loadUserProfile(): Promise<void> {
     try {
+      console.log('Loading user profile...');
       const { data: userData } = await this.supabaseService.client.auth.getUser();
       
       if (userData && userData.user) {
         const { user } = userData;
         const fullName = user.user_metadata?.['full_name'] || 'User';
         const email = user.email || '';
+        const userId = user.id;
         const initials = this.generateInitials(fullName);
         
-        this._userProfile.next({
+        console.log('User profile loaded successfully. User ID:', userId);
+        
+        const profile: UserProfile = {
           fullName,
           email,
-          initials
-        });
+          initials,
+          userId
+        };
+        
+        this._userProfile.next(profile);
+        this._profileLoaded.next(true);
+      } else {
+        console.warn('No user data found when loading profile');
+        this._userProfile.next(null);
+        this._profileLoaded.next(false);
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
+      this._userProfile.next(null);
+      this._profileLoaded.next(false);
     }
   }
   
@@ -78,8 +117,28 @@ export class AuthService {
     return this._userProfile.value;
   }
   
+  getCurrentUserId(): string | null {
+    const profile = this.getUserProfile();
+    // Verbesserte Fehlerbehandlung und Logging
+    if (!profile) {
+      console.warn('Attempting to get user ID but no profile is loaded');
+      return null;
+    }
+    if (!profile.userId) {
+      console.warn('User profile loaded but no userId found');
+      return null;
+    }
+    return profile.userId;
+  }
+  
+  isDemoUser(): boolean {
+    return this._isDemoUser.value;
+  }
+  
   async login(email: string, password: string): Promise<boolean> {
     try {
+      console.log('Attempting to login with email:', email);
+      
       const { data, error } = await this.supabaseService.client.auth.signInWithPassword({
         email,
         password
@@ -89,12 +148,28 @@ export class AuthService {
       
       this._isAuthenticated.next(true);
       await this.loadUserProfile();
-      this.notificationService.showSuccess('Successfully logged in');
+      
+      // Überprüfen, ob es sich um einen Demo-Benutzer handelt
+      if (email === this.DEMO_EMAIL) {
+        this._isDemoUser.next(true);
+        this.notificationService.showInfo('Sie sind im Demo-Modus. Sie können alle Funktionen testen, aber Ihre Änderungen werden zurückgesetzt, wenn Sie sich abmelden.');
+      } else {
+        this._isDemoUser.next(false);
+      }
+      
+      this.notificationService.showSuccess('Erfolgreich eingeloggt');
       return true;
     } catch (error: any) {
-      this.notificationService.showError(`Login failed: ${error.message}`);
+      console.error('Login failed:', error);
+      this.notificationService.showError(`Login fehlgeschlagen: ${error.message}`);
       return false;
     }
+  }
+  
+  // Spezielle Methode für Demo-Login
+  async loginAsDemo(): Promise<boolean> {
+    console.log('Logging in as demo user...');
+    return this.login(this.DEMO_EMAIL, this.DEMO_PASSWORD);
   }
   
   async signup(name: string, email: string, password: string): Promise<boolean> {
@@ -111,12 +186,12 @@ export class AuthService {
       
       if (error) throw error;
       
-      this._isAuthenticated.next(true);
-      await this.loadUserProfile();
-      this.notificationService.showSuccess('Account created successfully');
+      // Bei erfolgreicher Registrierung Erfolgsmeldung anzeigen
+      this.notificationService.showSuccess('Konto erfolgreich erstellt! Bitte melden Sie sich jetzt an.');
       return true;
     } catch (error: any) {
-      this.notificationService.showError(`Signup failed: ${error.message}`);
+      console.error('Signup failed:', error);
+      this.notificationService.showError(`Registrierung fehlgeschlagen: ${error.message}`);
       return false;
     }
   }
@@ -129,10 +204,14 @@ export class AuthService {
       
       this._isAuthenticated.next(false);
       this._userProfile.next(null);
+      this._profileLoaded.next(false);
+      this._isDemoUser.next(false);
+      
       this.router.navigate(['/landing']);
-      this.notificationService.showSuccess('You have been logged out');
+      this.notificationService.showSuccess('Sie wurden abgemeldet');
     } catch (error: any) {
-      this.notificationService.showError(`Logout failed: ${error.message}`);
+      console.error('Logout failed:', error);
+      this.notificationService.showError(`Abmeldung fehlgeschlagen: ${error.message}`);
     }
   }
 }
