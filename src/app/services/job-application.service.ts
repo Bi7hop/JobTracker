@@ -1,7 +1,7 @@
-// job-application.service.ts
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, from, map, switchMap, tap, catchError, combineLatest, forkJoin } from 'rxjs';
+import { BehaviorSubject, Observable, of, from, map, switchMap, tap, catchError, combineLatest, forkJoin, throwError } from 'rxjs';
 import { SupabaseService } from './supabase.service';
+import { AuthService } from './auth.service';
 import {
   Application,
   Event,
@@ -26,7 +26,7 @@ export class JobApplicationService {
   private remindersSubject = new BehaviorSubject<FollowUpReminder[]>([]);
   private documentsSubject = new BehaviorSubject<Document[]>([]);
   private statusChangesSubject = new BehaviorSubject<StatusChange[]>([]);
-  private eventsSubject = new BehaviorSubject<Event[]>([]); // Behalten falls anderswo genutzt
+  private eventsSubject = new BehaviorSubject<Event[]>([]);
 
   public applications$ = this.applicationsSubject.asObservable();
   public notes$ = this.notesSubject.asObservable();
@@ -34,7 +34,7 @@ export class JobApplicationService {
   public reminders$ = this.remindersSubject.asObservable();
   public documents$ = this.documentsSubject.asObservable();
   public statusChanges$ = this.statusChangesSubject.asObservable();
-  public events$ = this.eventsSubject.asObservable(); // Behalten falls anderswo genutzt
+  public events$ = this.eventsSubject.asObservable();
 
   private static readonly statColors = {
     active: 'from-purple-600 to-pink-500',
@@ -47,25 +47,59 @@ export class JobApplicationService {
     map(apps => this.calculateStats(apps))
   );
 
-  constructor(private supabaseService: SupabaseService) {
-    this.initializeData();
+  constructor(
+    private supabaseService: SupabaseService,
+    private authService: AuthService
+  ) {
+    combineLatest([
+      this.authService.isAuth$,
+      this.authService.profileLoaded$
+    ]).subscribe(([isAuthenticated, profileLoaded]) => {
+      if (isAuthenticated && profileLoaded) {
+        this.initializeData();
+      } else {
+        this.clearData();
+      }
+    });
   }
 
   private initializeData(): void {
+    const userId = this.authService.getCurrentUserId();
+    if (!userId) {
+      return;
+    }
+    
     this.loadApplications();
     this.loadNotes();
     this.loadCommunications();
     this.loadReminders();
     this.loadDocuments();
     this.loadStatusChanges();
-    this.loadEvents(); // Behalten falls anderswo genutzt
+    this.loadEvents();
   }
 
+  private clearData(): void {
+    this.applicationsSubject.next([]);
+    this.notesSubject.next([]);
+    this.communicationsSubject.next([]);
+    this.remindersSubject.next([]);
+    this.documentsSubject.next([]);
+    this.statusChangesSubject.next([]);
+    this.eventsSubject.next([]);
+  }
 
   private loadApplications(): void {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      this.applicationsSubject.next([]);
+      return;
+    }
+    
     from(this.supabaseService.client
       .from('applications')
-      .select('*') // Stelle sicher, dass 'appointment_date' hier inkludiert ist
+      .select('*')
+      .eq('user_id', userId)
       .order('date', { ascending: false })
     ).pipe(
       map(response => {
@@ -79,11 +113,10 @@ export class JobApplicationService {
           status: app.status,
           date: app.date,
           color: app.color || this.getColorForStatus(app.status),
-          appointmentDate: app.appointment_date // Map Supabase Spalte zu Model Feld
+          appointmentDate: app.appointment_date
         }));
       }),
       catchError(error => {
-        console.error('Error loading applications:', error);
         return of([]);
       })
     ).subscribe(applications => {
@@ -96,15 +129,21 @@ export class JobApplicationService {
   }
 
   getApplicationById(id: string | number): Observable<Application | undefined> {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return of(undefined);
+    }
+    
     return from(this.supabaseService.client
       .from('applications')
-      .select('*') // Stelle sicher, dass 'appointment_date' hier inkludiert ist
+      .select('*')
       .eq('id', id)
+      .eq('user_id', userId)
       .single()
     ).pipe(
       map(response => {
         if (response.error) {
-           // Handle 'PGRST116' (0 rows) gracefully, return undefined
           if (response.error.code === 'PGRST116') {
             return undefined;
           }
@@ -120,75 +159,85 @@ export class JobApplicationService {
           status: response.data.status,
           date: response.data.date,
           color: response.data.color || this.getColorForStatus(response.data.status),
-          appointmentDate: response.data.appointment_date // Map Supabase Spalte zu Model Feld
+          appointmentDate: response.data.appointment_date
         };
       }),
       catchError(error => {
-        console.error(`Error getting application with id ${id}:`, error);
         return of(undefined);
       })
     );
   }
 
   addApplication(newApplicationData: Omit<Application, 'id' | 'color'>): Observable<Application> {
-      const color = this.getColorForStatus(newApplicationData.status);
-      // Nur setzen, wenn Status 'Gespräch' und Datum vorhanden
-      const appointmentDateValue = newApplicationData.status === 'Gespräch' ? newApplicationData.appointmentDate : null;
-
-      return from(this.supabaseService.client
-        .from('applications')
-        .insert([{
-          company: newApplicationData.company,
-          location: newApplicationData.location || '',
-          position: newApplicationData.position,
-          status: newApplicationData.status,
-          date: newApplicationData.date,
-          color,
-          appointment_date: appointmentDateValue // Füge das neue Feld hinzu
-        }])
-        .select() // Stelle sicher, dass 'appointment_date' zurückgegeben wird
-      ).pipe(
-        map(response => {
-          if (response.error) throw response.error;
-          if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
-
-          const newAppDb = response.data[0];
-
-          const appToAdd: Application = {
-            id: newAppDb.id,
-            company: newAppDb.company,
-            location: newAppDb.location || '',
-            position: newAppDb.position,
-            status: newAppDb.status,
-            date: newAppDb.date,
-            color: newAppDb.color,
-            appointmentDate: newAppDb.appointment_date // Füge das neue Feld hinzu
-          };
-
-          const currentApps = this.applicationsSubject.getValue();
-          this.applicationsSubject.next([...currentApps, appToAdd]);
-
-          this.addStatusChangeInternal(appToAdd.id!, null, appToAdd.status); // ID sollte existieren
-
-          return appToAdd;
-        }),
-        catchError(error => {
-          console.error('Error adding application:', error);
-          throw error;
-        })
-      );
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
     }
+    
+    const color = this.getColorForStatus(newApplicationData.status);
+    const appointmentDateValue = newApplicationData.status === 'Gespräch' ? newApplicationData.appointmentDate : null;
+
+    return from(this.supabaseService.client
+      .from('applications')
+      .insert([{
+        company: newApplicationData.company,
+        location: newApplicationData.location || '',
+        position: newApplicationData.position,
+        status: newApplicationData.status,
+        date: newApplicationData.date,
+        color,
+        appointment_date: appointmentDateValue,
+        user_id: userId
+      }])
+      .select()
+    ).pipe(
+      map(response => {
+        if (response.error) throw response.error;
+        if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
+
+        const newAppDb = response.data[0];
+
+        const appToAdd: Application = {
+          id: newAppDb.id,
+          company: newAppDb.company,
+          location: newAppDb.location || '',
+          position: newAppDb.position,
+          status: newAppDb.status,
+          date: newAppDb.date,
+          color: newAppDb.color,
+          appointmentDate: newAppDb.appointment_date
+        };
+
+        const currentApps = this.applicationsSubject.getValue();
+        this.applicationsSubject.next([...currentApps, appToAdd]);
+
+        this.addStatusChangeInternal(appToAdd.id!, null, appToAdd.status);
+
+        return appToAdd;
+      }),
+      catchError(error => {
+        throw error;
+      })
+    );
+  }
 
   updateApplication(applicationDataToUpdate: Omit<Application, 'color'> & { id: string | number }): Observable<Application | undefined> {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
     const color = this.getColorForStatus(applicationDataToUpdate.status);
-    // Nur setzen, wenn Status 'Gespräch' und Datum vorhanden
     const appointmentDateValue = applicationDataToUpdate.status === 'Gespräch' ? applicationDataToUpdate.appointmentDate : null;
 
     return this.getApplicationById(applicationDataToUpdate.id).pipe(
       switchMap(currentApp => {
         if (!currentApp) {
-             return of(undefined); // Return undefined if current app not found
+          return of(undefined);
         }
+        
         return from(this.supabaseService.client
           .from('applications')
           .update({
@@ -198,10 +247,11 @@ export class JobApplicationService {
             status: applicationDataToUpdate.status,
             date: applicationDataToUpdate.date,
             color,
-            appointment_date: appointmentDateValue // Füge das neue Feld hinzu
+            appointment_date: appointmentDateValue
           })
           .eq('id', applicationDataToUpdate.id)
-          .select() // Stelle sicher, dass 'appointment_date' zurückgegeben wird
+          .eq('user_id', userId)
+          .select()
         ).pipe(
           map(response => {
             if (response.error) throw response.error;
@@ -217,7 +267,7 @@ export class JobApplicationService {
               status: updatedAppDb.status,
               date: updatedAppDb.date,
               color: updatedAppDb.color,
-              appointmentDate: updatedAppDb.appointment_date // Füge das neue Feld hinzu
+              appointmentDate: updatedAppDb.appointment_date
             };
 
             const currentApps = this.applicationsSubject.getValue();
@@ -227,7 +277,7 @@ export class JobApplicationService {
             this.applicationsSubject.next(updatedApps);
 
             if (currentApp && currentApp.status !== updatedApp.status) {
-              this.addStatusChangeInternal(updatedApp.id!, currentApp.status, updatedApp.status); // ID sollte existieren
+              this.addStatusChangeInternal(updatedApp.id!, currentApp.status, updatedApp.status);
             }
 
             return updatedApp;
@@ -235,20 +285,18 @@ export class JobApplicationService {
         );
       }),
       catchError(error => {
-        console.error(`Error updating application with id ${applicationDataToUpdate.id}:`, error);
         return of(undefined);
       })
     );
   }
 
   deleteApplication(id: string | number): Observable<void> {
-    // Beachte: Lösche abhängige Daten (notes, communications etc.) *vor* der Bewerbung,
-    // falls Cascading Deletes in Supabase nicht eingerichtet sind.
-    // Hier wird angenommen, dass die lokalen Subjects bereinigt werden,
-    // aber die DB-Operationen sollten idealerweise in einer Transaktion oder
-    // mit expliziten Löschvorgängen für abhängige Tabellen erfolgen.
-
-    // Zuerst alle abhängigen lokalen Daten entfernen
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
     const idString = String(id);
     this.notesSubject.next(this.notesSubject.getValue().filter(n => n.applicationId !== idString));
     this.communicationsSubject.next(this.communicationsSubject.getValue().filter(c => c.applicationId !== idString));
@@ -256,35 +304,38 @@ export class JobApplicationService {
     this.documentsSubject.next(this.documentsSubject.getValue().filter(d => d.applicationId !== idString));
     this.statusChangesSubject.next(this.statusChangesSubject.getValue().filter(s => s.applicationId !== idString));
 
-    // Dann die Bewerbung löschen
     return from(this.supabaseService.client
       .from('applications')
       .delete()
       .eq('id', id)
+      .eq('user_id', userId)
     ).pipe(
       map(response => {
         if (response.error) throw response.error;
 
-        // Lokale Bewerbungsliste aktualisieren
         const currentApps = this.applicationsSubject.getValue();
         this.applicationsSubject.next(currentApps.filter(app => app.id !== id));
 
-        return undefined; // void
+        return undefined;
       }),
       catchError(error => {
-        console.error(`Error deleting application with id ${id}:`, error);
-        // Hier könnte man die zuvor entfernten lokalen Daten wiederherstellen, wenn das Löschen fehlschlägt
         throw error;
       })
     );
   }
 
-  // --- Methoden für Notes, Communications, Reminders, Documents, StatusChanges bleiben weitgehend gleich ---
-  // (Keine Änderungen in den folgenden Methoden bzgl. appointmentDate nötig)
   private loadNotes(): void {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      this.notesSubject.next([]);
+      return;
+    }
+    
     from(this.supabaseService.client
       .from('notes')
-      .select('*')
+      .select('*, applications!inner(*)')
+      .eq('applications.user_id', userId)
       .order('created_at', { ascending: false })
     ).pipe(
       map(response => {
@@ -299,7 +350,6 @@ export class JobApplicationService {
         }));
       }),
       catchError(error => {
-        console.error('Error loading notes:', error);
         return of([]);
       })
     ).subscribe(notes => {
@@ -314,101 +364,159 @@ export class JobApplicationService {
   }
 
   addNote(applicationId: string, content: string): Observable<Note> {
-    return from(this.supabaseService.client
-      .from('notes')
-      .insert([{
-        application_id: applicationId,
-        content
-      }])
-      .select()
-    ).pipe(
-      map(response => {
-        if (response.error) throw response.error;
-        if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
+    return this.getApplicationById(applicationId).pipe(
+      switchMap(application => {
+        if (!application) {
+          return throwError(() => new Error('Application not found or access denied'));
+        }
+        
+        return from(this.supabaseService.client
+          .from('notes')
+          .insert([{
+            application_id: applicationId,
+            content
+          }])
+          .select()
+        ).pipe(
+          map(response => {
+            if (response.error) throw response.error;
+            if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
 
-        const newNote = response.data[0];
+            const newNote = response.data[0];
 
-        const noteObj: Note = {
-          id: newNote.id,
-          applicationId: newNote.application_id,
-          content: newNote.content,
-          createdAt: new Date(newNote.created_at)
-        };
+            const noteObj: Note = {
+              id: newNote.id,
+              applicationId: newNote.application_id,
+              content: newNote.content,
+              createdAt: new Date(newNote.created_at)
+            };
 
-        const currentNotes = this.notesSubject.getValue();
-        this.notesSubject.next([...currentNotes, noteObj]);
+            const currentNotes = this.notesSubject.getValue();
+            this.notesSubject.next([...currentNotes, noteObj]);
 
-        return noteObj;
+            return noteObj;
+          })
+        );
       }),
       catchError(error => {
-        console.error('Error adding note:', error);
         throw error;
       })
     );
   }
 
   updateNote(id: string, content: string): Observable<Note | undefined> {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
     return from(this.supabaseService.client
       .from('notes')
-      .update({
-        content,
-        updated_at: new Date().toISOString()
-      })
+      .select('*, applications!inner(*)')
       .eq('id', id)
-      .select()
+      .eq('applications.user_id', userId)
+      .single()
     ).pipe(
-      map(response => {
-        if (response.error) throw response.error;
-        if (!response.data || response.data.length === 0) return undefined;
+      switchMap(noteResponse => {
+        if (noteResponse.error || !noteResponse.data) {
+          return of(undefined);
+        }
+        
+        return from(this.supabaseService.client
+          .from('notes')
+          .update({
+            content,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+        ).pipe(
+          map(response => {
+            if (response.error) throw response.error;
+            if (!response.data || response.data.length === 0) return undefined;
 
-        const updatedNote = response.data[0];
+            const updatedNote = response.data[0];
 
-        const noteObj: Note = {
-          id: updatedNote.id,
-          applicationId: updatedNote.application_id,
-          content: updatedNote.content,
-          createdAt: new Date(updatedNote.created_at),
-          updatedAt: new Date(updatedNote.updated_at)
-        };
+            const noteObj: Note = {
+              id: updatedNote.id,
+              applicationId: updatedNote.application_id,
+              content: updatedNote.content,
+              createdAt: new Date(updatedNote.created_at),
+              updatedAt: new Date(updatedNote.updated_at)
+            };
 
-        const currentNotes = this.notesSubject.getValue();
-        this.notesSubject.next(currentNotes.map(note => note.id === id ? noteObj : note));
+            const currentNotes = this.notesSubject.getValue();
+            this.notesSubject.next(currentNotes.map(note => note.id === id ? noteObj : note));
 
-        return noteObj;
+            return noteObj;
+          })
+        );
       }),
       catchError(error => {
-        console.error(`Error updating note with id ${id}:`, error);
         return of(undefined);
       })
     );
   }
 
   deleteNote(id: string): Observable<void> {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
     return from(this.supabaseService.client
       .from('notes')
-      .delete()
+      .select('*, applications!inner(*)')
       .eq('id', id)
+      .eq('applications.user_id', userId)
+      .single()
     ).pipe(
-      map(response => {
-        if (response.error) throw response.error;
+      switchMap(noteResponse => {
+        if (noteResponse.error || !noteResponse.data) {
+          return throwError(() => new Error('Note not found or access denied'));
+        }
+        
+        return from(this.supabaseService.client
+          .from('notes')
+          .delete()
+          .eq('id', id)
+        ).pipe(
+          map(response => {
+            if (response.error) throw response.error;
 
-        const currentNotes = this.notesSubject.getValue();
-        this.notesSubject.next(currentNotes.filter(note => note.id !== id));
+            const currentNotes = this.notesSubject.getValue();
+            this.notesSubject.next(currentNotes.filter(note => note.id !== id));
 
-        return undefined;
+            return undefined;
+          })
+        );
       }),
       catchError(error => {
-        console.error(`Error deleting note with id ${id}:`, error);
         throw error;
       })
     );
   }
 
-
   private loadCommunications(): void {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      this.communicationsSubject.next([]);
+      return;
+    }
+    
     from(this.supabaseService.client
       .from('communications')
-      .select('*')
+      .select('*, applications!inner(*)')
+      .eq('applications.user_id', userId)
       .order('date', { ascending: false })
     ).pipe(
       map(response => {
@@ -427,7 +535,6 @@ export class JobApplicationService {
         }));
       }),
       catchError(error => {
-        console.error('Error loading communications:', error);
         return of([]);
       })
     ).subscribe(communications => {
@@ -442,54 +549,74 @@ export class JobApplicationService {
   }
 
   addCommunication(applicationId: string, communication: Omit<Communication, 'id' | 'createdAt' | 'applicationId'>): Observable<Communication> {
-    return from(this.supabaseService.client
-      .from('communications')
-      .insert([{
-        application_id: applicationId,
-        type: communication.type,
-        subject: communication.subject,
-        content: communication.content,
-        date: communication.date.toISOString(),
-        direction: communication.direction,
-        contact_person: communication.contactPerson
-      }])
-      .select()
-    ).pipe(
-      map(response => {
-        if (response.error) throw response.error;
-        if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
+    return this.getApplicationById(applicationId).pipe(
+      switchMap(application => {
+        if (!application) {
+          return throwError(() => new Error('Application not found or access denied'));
+        }
+        
+        return from(this.supabaseService.client
+          .from('communications')
+          .insert([{
+            application_id: applicationId,
+            type: communication.type,
+            subject: communication.subject,
+            content: communication.content,
+            date: communication.date.toISOString(),
+            direction: communication.direction,
+            contact_person: communication.contactPerson
+          }])
+          .select()
+        ).pipe(
+          map(response => {
+            if (response.error) throw response.error;
+            if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
 
-        const newComm = response.data[0];
+            const newComm = response.data[0];
 
-        const commObj: Communication = {
-          id: newComm.id,
-          applicationId: newComm.application_id,
-          type: newComm.type,
-          subject: newComm.subject,
-          content: newComm.content,
-          date: new Date(newComm.date),
-          direction: newComm.direction,
-          contactPerson: newComm.contact_person,
-          createdAt: new Date(newComm.created_at)
-        };
+            const commObj: Communication = {
+              id: newComm.id,
+              applicationId: newComm.application_id,
+              type: newComm.type,
+              subject: newComm.subject,
+              content: newComm.content,
+              date: new Date(newComm.date),
+              direction: newComm.direction,
+              contactPerson: newComm.contact_person,
+              createdAt: new Date(newComm.created_at)
+            };
 
-        const currentComms = this.communicationsSubject.getValue();
-        this.communicationsSubject.next([...currentComms, commObj]);
+            const currentComms = this.communicationsSubject.getValue();
+            this.communicationsSubject.next([...currentComms, commObj]);
 
-        return commObj;
+            return commObj;
+          })
+        );
       }),
       catchError(error => {
-        console.error('Error adding communication:', error);
         throw error;
       })
     );
   }
 
-
   private loadReminders(): void {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      this.remindersSubject.next([]);
+      return;
+    }
+    
     from(this.supabaseService.client
       .from('reminders')
-      .select('*')
+      .select('*, applications!inner(*)')
+      .eq('applications.user_id', userId)
       .order('date', { ascending: true })
     ).pipe(
       map(response => {
@@ -507,7 +634,6 @@ export class JobApplicationService {
         }));
       }),
       catchError(error => {
-        console.error('Error loading reminders:', error);
         return of([]);
       })
     ).subscribe(reminders => {
@@ -522,52 +648,72 @@ export class JobApplicationService {
   }
 
   addReminder(applicationId: string, date: Date, reminderText: string, notifyBefore: number = 60): Observable<FollowUpReminder> {
-    return from(this.supabaseService.client
-      .from('reminders')
-      .insert([{
-        application_id: applicationId,
-        date: date.toISOString(),
-        reminder_text: reminderText,
-        is_completed: false,
-        notification_shown: false,
-        notify_before: notifyBefore
-      }])
-      .select()
-    ).pipe(
-      map(response => {
-        if (response.error) throw response.error;
-        if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
+    return this.getApplicationById(applicationId).pipe(
+      switchMap(application => {
+        if (!application) {
+          return throwError(() => new Error('Application not found or access denied'));
+        }
+        
+        return from(this.supabaseService.client
+          .from('reminders')
+          .insert([{
+            application_id: applicationId,
+            date: date.toISOString(),
+            reminder_text: reminderText,
+            is_completed: false,
+            notification_shown: false,
+            notify_before: notifyBefore
+          }])
+          .select()
+        ).pipe(
+          map(response => {
+            if (response.error) throw response.error;
+            if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
 
-        const newReminder = response.data[0];
+            const newReminder = response.data[0];
 
-        const reminderObj: FollowUpReminder = {
-          id: newReminder.id,
-          applicationId: newReminder.application_id,
-          date: new Date(newReminder.date),
-          reminderText: newReminder.reminder_text,
-          isCompleted: newReminder.is_completed,
-          createdAt: new Date(newReminder.created_at),
-          notificationShown: newReminder.notification_shown,
-          notifyBefore: newReminder.notify_before
-        };
+            const reminderObj: FollowUpReminder = {
+              id: newReminder.id,
+              applicationId: newReminder.application_id,
+              date: new Date(newReminder.date),
+              reminderText: newReminder.reminder_text,
+              isCompleted: newReminder.is_completed,
+              createdAt: new Date(newReminder.created_at),
+              notificationShown: newReminder.notification_shown,
+              notifyBefore: newReminder.notify_before
+            };
 
-        const currentReminders = this.remindersSubject.getValue();
-        this.remindersSubject.next([...currentReminders, reminderObj]);
+            const currentReminders = this.remindersSubject.getValue();
+            this.remindersSubject.next([...currentReminders, reminderObj]);
 
-        return reminderObj;
+            return reminderObj;
+          })
+        );
       }),
       catchError(error => {
-        console.error('Error adding reminder:', error);
         throw error;
       })
     );
   }
 
   toggleReminderCompletion(id: string): Observable<FollowUpReminder | undefined> {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
     return from(this.supabaseService.client
       .from('reminders')
-      .select('*')
+      .select('*, applications!inner(*)')
       .eq('id', id)
+      .eq('applications.user_id', userId)
       .single()
     ).pipe(
       switchMap(response => {
@@ -608,17 +754,23 @@ export class JobApplicationService {
         );
       }),
       catchError(error => {
-        console.error(`Error toggling reminder completion with id ${id}:`, error);
         return of(undefined);
       })
     );
   }
 
   updateReminderDate(id: string, minutesToAdd: number): Observable<FollowUpReminder | undefined> {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
     return from(this.supabaseService.client
       .from('reminders')
-      .select('*')
+      .select('*, applications!inner(*)')
       .eq('id', id)
+      .eq('applications.user_id', userId)
       .single()
     ).pipe(
       switchMap(response => {
@@ -663,43 +815,67 @@ export class JobApplicationService {
         );
       }),
       catchError(error => {
-        console.error(`Error updating reminder date with id ${id}:`, error);
         return of(undefined);
       })
     );
   }
 
   markReminderNotificationShown(id: string): Observable<void> {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
     return from(this.supabaseService.client
       .from('reminders')
-      .update({ notification_shown: true })
+      .select('*, applications!inner(*)')
       .eq('id', id)
+      .eq('applications.user_id', userId)
+      .single()
     ).pipe(
-      map(response => {
+      switchMap(response => {
         if (response.error) throw response.error;
+        if (!response.data) return throwError(() => new Error('Reminder not found or access denied'));
+        
+        return from(this.supabaseService.client
+          .from('reminders')
+          .update({ notification_shown: true })
+          .eq('id', id)
+        ).pipe(
+          map(updateResponse => {
+            if (updateResponse.error) throw updateResponse.error;
 
-        const currentReminders = this.remindersSubject.getValue();
-        this.remindersSubject.next(currentReminders.map(rem => {
-          if (rem.id === id) {
-            return { ...rem, notificationShown: true };
-          }
-          return rem;
-        }));
+            const currentReminders = this.remindersSubject.getValue();
+            this.remindersSubject.next(currentReminders.map(rem => {
+              if (rem.id === id) {
+                return { ...rem, notificationShown: true };
+              }
+              return rem;
+            }));
 
-        return undefined;
+            return undefined;
+          })
+        );
       }),
       catchError(error => {
-        console.error(`Error marking reminder notification shown with id ${id}:`, error);
         throw error;
       })
     );
   }
 
-
   private loadDocuments(): void {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      this.documentsSubject.next([]);
+      return;
+    }
+    
     from(this.supabaseService.client
       .from('documents')
-      .select('*')
+      .select('*, applications!inner(*)')
+      .eq('applications.user_id', userId)
       .order('upload_date', { ascending: false })
     ).pipe(
       map(response => {
@@ -719,7 +895,6 @@ export class JobApplicationService {
         }));
       }),
       catchError(error => {
-        console.error('Error loading documents:', error);
         return of([]);
       })
     ).subscribe(documents => {
@@ -734,77 +909,116 @@ export class JobApplicationService {
   }
 
   addDocument(documentData: Omit<Document, 'id' | 'uploadDate'>): Observable<Document> {
-    return from(this.supabaseService.client
-      .from('documents')
-      .insert([{
-        application_id: documentData.applicationId,
-        name: documentData.name,
-        type: documentData.type,
-        file_type: documentData.fileType,
-        file_size: documentData.fileSize,
-        tags: documentData.tags || [],
-        version: documentData.version || 1,
-        file_data: documentData.fileData
-      }])
-      .select()
-    ).pipe(
-      map(response => {
-        if (response.error) throw response.error;
-        if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
+    return this.getApplicationById(documentData.applicationId).pipe(
+      switchMap(application => {
+        if (!application) {
+          return throwError(() => new Error('Application not found or access denied'));
+        }
+        
+        return from(this.supabaseService.client
+          .from('documents')
+          .insert([{
+            application_id: documentData.applicationId,
+            name: documentData.name,
+            type: documentData.type,
+            file_type: documentData.fileType,
+            file_size: documentData.fileSize,
+            tags: documentData.tags || [],
+            version: documentData.version || 1,
+            file_data: documentData.fileData
+          }])
+          .select()
+        ).pipe(
+          map(response => {
+            if (response.error) throw response.error;
+            if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
 
-        const newDoc = response.data[0];
+            const newDoc = response.data[0];
 
-        const docObj: Document = {
-          id: newDoc.id,
-          applicationId: newDoc.application_id,
-          name: newDoc.name,
-          type: newDoc.type,
-          fileType: newDoc.file_type,
-          fileSize: newDoc.file_size,
-          uploadDate: new Date(newDoc.upload_date),
-          tags: newDoc.tags,
-          version: newDoc.version,
-          fileData: newDoc.file_data
-        };
+            const docObj: Document = {
+              id: newDoc.id,
+              applicationId: newDoc.application_id,
+              name: newDoc.name,
+              type: newDoc.type,
+              fileType: newDoc.file_type,
+              fileSize: newDoc.file_size,
+              uploadDate: new Date(newDoc.upload_date),
+              tags: newDoc.tags,
+              version: newDoc.version,
+              fileData: newDoc.file_data
+            };
 
-        const currentDocs = this.documentsSubject.getValue();
-        this.documentsSubject.next([...currentDocs, docObj]);
+            const currentDocs = this.documentsSubject.getValue();
+            this.documentsSubject.next([...currentDocs, docObj]);
 
-        return docObj;
+            return docObj;
+          })
+        );
       }),
       catchError(error => {
-        console.error('Error adding document:', error);
         throw error;
       })
     );
   }
 
   deleteDocument(id: string): Observable<void> {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
+    }
+    
     return from(this.supabaseService.client
       .from('documents')
-      .delete()
+      .select('*, applications!inner(*)')
       .eq('id', id)
+      .eq('applications.user_id', userId)
+      .single()
     ).pipe(
-      map(response => {
-        if (response.error) throw response.error;
+      switchMap(docResponse => {
+        if (docResponse.error || !docResponse.data) {
+          return throwError(() => new Error('Document not found or access denied'));
+        }
+        
+        return from(this.supabaseService.client
+          .from('documents')
+          .delete()
+          .eq('id', id)
+        ).pipe(
+          map(response => {
+            if (response.error) throw response.error;
 
-        const currentDocs = this.documentsSubject.getValue();
-        this.documentsSubject.next(currentDocs.filter(doc => doc.id !== id));
+            const currentDocs = this.documentsSubject.getValue();
+            this.documentsSubject.next(currentDocs.filter(doc => doc.id !== id));
 
-        return undefined;
+            return undefined;
+          })
+        );
       }),
       catchError(error => {
-        console.error(`Error deleting document with id ${id}:`, error);
         throw error;
       })
     );
   }
 
-
   private loadStatusChanges(): void {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      this.statusChangesSubject.next([]);
+      return;
+    }
+    
     from(this.supabaseService.client
       .from('status_changes')
-      .select('*')
+      .select('*, applications!inner(*)')
+      .eq('applications.user_id', userId)
       .order('timestamp', { ascending: false })
     ).pipe(
       map(response => {
@@ -819,7 +1033,6 @@ export class JobApplicationService {
         }));
       }),
       catchError(error => {
-        console.error('Error loading status changes:', error);
         return of([]);
       })
     ).subscribe(statusChanges => {
@@ -834,46 +1047,64 @@ export class JobApplicationService {
   }
 
   private addStatusChangeInternal(applicationId: string | number, oldStatus: string | null, newStatus: string): void {
-    from(this.supabaseService.client
-      .from('status_changes')
-      .insert([{
-        application_id: applicationId,
-        old_status: oldStatus,
-        new_status: newStatus
-      }])
-      .select()
-    ).pipe(
-      map(response => {
-        if (response.error) throw response.error;
-        if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return;
+    }
+    
+    this.getApplicationById(applicationId).subscribe(application => {
+      if (!application) {
+        return;
+      }
+      
+      from(this.supabaseService.client
+        .from('status_changes')
+        .insert([{
+          application_id: applicationId,
+          old_status: oldStatus,
+          new_status: newStatus
+        }])
+        .select()
+      ).pipe(
+        map(response => {
+          if (response.error) throw response.error;
+          if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
 
-        const newChange = response.data[0];
+          const newChange = response.data[0];
 
-        const changeObj: StatusChange = {
-          id: newChange.id,
-          applicationId: newChange.application_id,
-          oldStatus: newChange.old_status,
-          newStatus: newChange.new_status,
-          timestamp: new Date(newChange.timestamp)
-        };
+          const changeObj: StatusChange = {
+            id: newChange.id,
+            applicationId: newChange.application_id,
+            oldStatus: newChange.old_status,
+            newStatus: newChange.new_status,
+            timestamp: new Date(newChange.timestamp)
+          };
 
-        const currentChanges = this.statusChangesSubject.getValue();
-        this.statusChangesSubject.next([...currentChanges, changeObj]);
+          const currentChanges = this.statusChangesSubject.getValue();
+          this.statusChangesSubject.next([...currentChanges, changeObj]);
 
-        return changeObj;
-      }),
-      catchError(error => {
-        console.error('Error adding status change:', error);
-        return of(undefined); // Return an observable of undefined on error
-      })
-    ).subscribe(); // Subscribe here to trigger the operation
+          return changeObj;
+        }),
+        catchError(error => {
+          return of(undefined);
+        })
+      ).subscribe();
+    });
   }
 
-  // --- Events (Behalten falls für Kalender o.ä. noch genutzt) ---
   private loadEvents(): void {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      this.eventsSubject.next([]);
+      return;
+    }
+    
     from(this.supabaseService.client
       .from('events')
       .select('*')
+      .eq('user_id', userId)
       .order('date', { ascending: true })
     ).pipe(
       map(response => {
@@ -889,7 +1120,6 @@ export class JobApplicationService {
         }));
       }),
       catchError(error => {
-        console.error('Error loading events:', error);
         return of([]);
       })
     ).subscribe(events => {
@@ -901,32 +1131,69 @@ export class JobApplicationService {
     return this.events$;
   }
 
-  // --- Methode zum Abrufen der nächsten Gesprächstermine ---
-  getUpcomingAppointments(): Observable<Application[]> {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Setze auf Beginn des Tages für Datumsvergleich
-
-      return this.applications$.pipe(
-        map(apps => apps
-          .filter(app =>
-            app.status === 'Gespräch' &&
-            app.appointmentDate &&
-            new Date(app.appointmentDate) >= today // Nur Termine heute oder in der Zukunft
-          )
-          .sort((a, b) => {
-            // Sicherstellen, dass Daten vorhanden sind vor dem Vergleich
-            const dateA = a.appointmentDate ? new Date(a.appointmentDate).getTime() : 0;
-            const dateB = b.appointmentDate ? new Date(b.appointmentDate).getTime() : 0;
-            if (!dateA && !dateB) return 0;
-            if (!dateA) return 1; // Termine ohne Datum nach hinten sortieren
-            if (!dateB) return -1;
-            return dateA - dateB; // Aufsteigend nach Datum sortieren
-          })
-        )
-      );
+  addEvent(eventData: Omit<Event, 'id'>): Observable<Event> {
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      return throwError(() => new Error('No user ID available'));
     }
+    
+    return from(this.supabaseService.client
+      .from('events')
+      .insert([{
+        ...eventData,
+        user_id: userId 
+      }])
+      .select()
+    ).pipe(
+      map(response => {
+        if (response.error) throw response.error;
+        if (!response.data || response.data.length === 0) throw new Error('No data returned after insert');
 
-  // --- Timeline und andere aggregierte Daten ---
+        const newEvent = response.data[0];
+        const eventObj: Event = {
+          id: newEvent.id,
+          title: newEvent.title,
+          company: newEvent.company,
+          time: newEvent.time,
+          date: newEvent.date,
+          color: newEvent.color
+        };
+
+        const currentEvents = this.eventsSubject.getValue();
+        this.eventsSubject.next([...currentEvents, eventObj]);
+
+        return eventObj;
+      }),
+      catchError(error => {
+        throw error;
+      })
+    );
+  }
+
+  getUpcomingAppointments(): Observable<Application[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return this.applications$.pipe(
+      map(apps => apps
+        .filter(app =>
+          app.status === 'Gespräch' &&
+          app.appointmentDate &&
+          new Date(app.appointmentDate) >= today
+        )
+        .sort((a, b) => {
+          const dateA = a.appointmentDate ? new Date(a.appointmentDate).getTime() : 0;
+          const dateB = b.appointmentDate ? new Date(b.appointmentDate).getTime() : 0;
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return dateA - dateB;
+        })
+      )
+    );
+  }
+
   getTimelineForApplication(applicationId: string): Observable<TimelineItem[]> {
     const appIdString = String(applicationId);
 
@@ -982,10 +1249,10 @@ export class JobApplicationService {
         reminders.forEach(reminder => {
           timelineItems.push({
             id: `timeline-${reminder.id}`,
-            timestamp: reminder.createdAt, // Zeigt Erstellungszeit in Timeline
+            timestamp: reminder.createdAt,
             type: 'Reminder',
             data: reminder,
-            title: `Erinnerung erstellt: ${reminder.reminderText}`, // Titel angepasst
+            title: `Erinnerung erstellt: ${reminder.reminderText}`,
             icon: 'reminder'
           });
         });
@@ -1008,7 +1275,6 @@ export class JobApplicationService {
     );
   }
 
-
   getApplicationsWithActivity(): Observable<Application[]> {
     return combineLatest([
       this.applications$,
@@ -1025,13 +1291,11 @@ export class JobApplicationService {
           const hasReminders = reminders.some(reminder => reminder.applicationId === currentAppId);
           const hasDocuments = documents.some(doc => doc.applicationId === currentAppId);
 
-          // Stelle sicher, dass das app Objekt alle Felder hat, die in der Liste gebraucht werden
           return { ...app, hasNotes, hasCommunications, hasReminders, hasDocuments };
         });
       })
     );
   }
-
 
   getAllReminders(): Observable<(FollowUpReminder & { application?: Application })[]> {
     return combineLatest([
@@ -1040,7 +1304,7 @@ export class JobApplicationService {
     ]).pipe(
       map(([reminders, applications]) => {
         return reminders.map(reminder => {
-          const application = applications.find(app => app.id == reminder.applicationId);
+          const application = applications.find(app => String(app.id) === reminder.applicationId);
           return { ...reminder, application };
         }).sort((a, b) => {
           if (a.isCompleted !== b.isCompleted) {
@@ -1074,14 +1338,13 @@ export class JobApplicationService {
             return notificationTime <= now;
           })
           .map(reminder => {
-            const application = applications.find(app => app.id == reminder.applicationId);
+            const application = applications.find(app => String(app.id) === reminder.applicationId);
             return { ...reminder, application };
           });
       })
     );
   }
 
-  // --- Hilfsmethoden ---
   private getColorForStatus(status: string): string {
     switch (status) {
       case 'Gespräch': return 'bg-gradient-to-r from-purple-600 to-pink-500';
