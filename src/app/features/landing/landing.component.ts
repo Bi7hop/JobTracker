@@ -90,6 +90,12 @@ export class LandingComponent {
     }
   }
 
+  loginAsDemo(): void {
+    this.email = 'demo@jobtracker.com';
+    this.password = 'demoaccount';
+    this.submitAuth();
+  }
+
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
