@@ -1,89 +1,94 @@
 <div class="container mx-auto p-4 sm:p-6 lg:p-8">
 
-    <div class="mb-6">
-      <h2 class="text-3xl font-bold mb-2">Erinnerungen</h2>
-      <div class="w-48 h-1 bg-gradient-to-r from-purple-600 to-pink-500 mb-4"></div>
-      <p class="text-base text-gray-400">Übersicht über alle anstehenden Erinnerungen für deine Bewerbungen</p>
-    </div>
-  
-    <div class="mb-6 flex flex-wrap gap-2">
-      <button (click)="setFilter('all')"
-              class="px-4 py-2 rounded-md transition"
-              [ngClass]="filterStatus === 'all' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
-        Alle
-      </button>
-      <button (click)="setFilter('pending')"
-              class="px-4 py-2 rounded-md transition"
-              [ngClass]="filterStatus === 'pending' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
-        Ausstehend
-      </button>
-      <button (click)="setFilter('completed')"
-              class="px-4 py-2 rounded-md transition"
-              [ngClass]="filterStatus === 'completed' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
-        Erledigt
-      </button>
-    </div>
-  
-    <div class="bg-gray-900 rounded-lg border border-gray-800 shadow-lg">
-      <ng-container *ngIf="reminders$ | async as remindersList; else loading">
-        <div *ngIf="remindersList.length > 0; else noReminders" class="divide-y divide-gray-800">
-          <div *ngFor="let reminder of remindersList"
-               [hidden]="(filterStatus === 'pending' && reminder.isCompleted) || (filterStatus === 'completed' && !reminder.isCompleted)"
-               class="p-4 sm:p-6 transition hover:bg-gray-800/50"
-               [ngClass]="reminder.isCompleted ? 'opacity-60' : 'opacity-100'">
-  
-            <div class="flex items-start">
-              <input type="checkbox"
-                     [id]="'reminder-' + reminder.id"
-                     [checked]="reminder.isCompleted"
-                     (change)="toggleReminderCompletion(reminder.id)"
-                     class="mt-1 mr-3 h-5 w-5 text-purple-600 rounded border-gray-600 bg-gray-700 focus:ring-purple-500 cursor-pointer">
-  
-              <div class="flex-1">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                  <h3 class="font-semibold text-white text-lg break-words" [ngClass]="reminder.isCompleted ? 'line-through' : ''">
-                    {{ reminder.reminderText }}
-                  </h3>
-                  <div class="flex items-center space-x-2 flex-shrink-0"> <span class="px-3 py-1 rounded-full text-xs font-medium"
-                          [ngClass]="getPriorityClass(reminder.date, reminder.isCompleted)">
-                      {{ getRelativeTimeString(reminder.date) }}
-                    </span>
-                    <span class="text-gray-400 text-sm">{{ reminder.date | date:'dd.MM.yyyy' }}</span>
-                  </div>
+  <div class="mb-6">
+    <h2 class="text-3xl font-bold mb-2">Erinnerungen</h2>
+    <div class="w-48 h-1 bg-gradient-to-r from-purple-600 to-pink-500 mb-4"></div>
+    <p class="text-base text-gray-400">Übersicht über alle anstehenden Erinnerungen für deine Bewerbungen</p>
+  </div>
+
+  <div class="mb-6 flex flex-wrap gap-2">
+    <button (click)="setFilter('all')"
+            class="px-4 py-2 rounded-md transition"
+            [ngClass]="filterStatus === 'all' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+      Alle
+    </button>
+    <button (click)="setFilter('pending')"
+            class="px-4 py-2 rounded-md transition"
+            [ngClass]="filterStatus === 'pending' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+      Ausstehend
+    </button>
+    <button (click)="setFilter('completed')"
+            class="px-4 py-2 rounded-md transition"
+            [ngClass]="filterStatus === 'completed' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+      Erledigt
+    </button>
+  </div>
+
+  <div class="bg-gray-900 rounded-lg border border-gray-800 shadow-lg">
+    <ng-container *ngIf="reminders$ | async as remindersList; else loading">
+      <div *ngIf="remindersList.length > 0; else noReminders" class="divide-y divide-gray-800">
+        <div *ngFor="let reminder of remindersList"
+             [hidden]="(filterStatus === 'pending' && reminder.isCompleted) || (filterStatus === 'completed' && !reminder.isCompleted)"
+             class="p-4 sm:p-6 transition hover:bg-gray-800/50"
+             [ngClass]="reminder.isCompleted ? 'opacity-60' : 'opacity-100'">
+
+          <div class="flex items-start">
+            <input type="checkbox"
+                   [id]="'reminder-' + reminder.id"
+                   [checked]="reminder.isCompleted"
+                   (change)="toggleReminderCompletion(reminder.id)"
+                   class="mt-1 mr-3 h-5 w-5 text-purple-600 rounded border-gray-600 bg-gray-700 focus:ring-purple-500 cursor-pointer">
+
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                <h3 class="font-semibold text-white text-base sm:text-lg break-words" [ngClass]="reminder.isCompleted ? 'line-through' : ''">
+                  {{ reminder.reminderText }}
+                </h3>
+                <div class="flex items-center space-x-2 flex-shrink-0">
+                  <span class="px-3 py-1 rounded-full text-xs font-medium"
+                        [ngClass]="getPriorityClass(reminder.date, reminder.isCompleted)">
+                    {{ getRelativeTimeString(reminder.date) }}
+                  </span>
+                  <span class="text-gray-400 text-sm">{{ reminder.date | date:'dd.MM.yyyy' }}</span>
                 </div>
-  
-                <div *ngIf="reminder.application" class="bg-gray-800/50 rounded p-3 mt-2">
-                  <a [routerLink]="['/applications', reminder.applicationId]" class="flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-700/50 p-2 rounded transition">
-                    <div class="flex items-center gap-2 mb-2 sm:mb-0">
-                      <div class="w-4 h-4 rounded-full" [ngClass]="reminder.application.color"></div>
-                      <div class="min-w-0"> <p class="font-medium text-white truncate">{{ reminder.application.company }}</p> <p class="text-sm text-gray-400 truncate">{{ reminder.application.position }}</p> </div>
+              </div>
+
+              <div *ngIf="reminder.application" class="bg-gray-800/50 rounded p-3 mt-2">
+                <a [routerLink]="['/applications', reminder.applicationId]" class="flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-700/50 p-2 rounded transition">
+                  <div class="flex items-center gap-2 mb-2 sm:mb-0">
+                    <div class="w-4 h-4 rounded-full" [ngClass]="reminder.application.color"></div>
+                    <div class="min-w-0">
+                      <p class="font-medium text-white truncate">{{ reminder.application.company }}</p>
+                      <p class="text-sm text-gray-400 truncate">{{ reminder.application.position }}</p>
                     </div>
-                    <span class="px-2 py-1 rounded-full text-xs whitespace-nowrap self-start sm:self-center" [ngClass]="reminder.application.status === 'Gespräch' ? 'bg-green-900 text-green-400' :
-                                     reminder.application.status === 'Gesendet' ? 'bg-blue-900 text-blue-400' :
-                                     reminder.application.status === 'Absage' ? 'bg-pink-900 text-pink-400' :
-                                     reminder.application.status === 'HR Screening' ? 'bg-yellow-900 text-yellow-400' :
-                                     reminder.application.status === 'Angebot' ? 'bg-lime-900 text-lime-400' : 'bg-gray-800 text-gray-400'">
-                      {{ reminder.application.status }}
-                    </span>
-                  </a>
-                </div>
-  
-                <div class="mt-2 text-xs text-gray-500">
-                  Erstellt: {{ reminder.createdAt | date:'dd.MM.yyyy' }}
-                </div>
-              </div> </div> </div> </div> <ng-template #noReminders>
-          <div class="text-center py-12">
-            <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 class="mt-2 text-sm font-medium text-gray-300">Keine Erinnerungen gefunden</h3>
-            <p class="mt-1 text-sm text-gray-500">Füge Erinnerungen bei deinen Bewerbungen hinzu, um hier eine Übersicht zu sehen.</p>
-          </div>
-        </ng-template>
-      </ng-container> <ng-template #loading>
+                  </div>
+                  <span class="px-2 py-1 rounded-full text-xs whitespace-nowrap self-start sm:self-center" [ngClass]="reminder.application.status === 'Gespräch' ? 'bg-green-900 text-green-400' :
+                                         reminder.application.status === 'Gesendet' ? 'bg-blue-900 text-blue-400' :
+                                         reminder.application.status === 'Absage' ? 'bg-pink-900 text-pink-400' :
+                                         reminder.application.status === 'HR Screening' ? 'bg-yellow-900 text-yellow-400' :
+                                         reminder.application.status === 'Angebot' ? 'bg-lime-900 text-lime-400' : 'bg-gray-800 text-gray-400'">
+                    {{ reminder.application.status }}
+                  </span>
+                </a>
+              </div>
+
+              <div class="mt-2 text-xs text-gray-500">
+                Erstellt: {{ reminder.createdAt | date:'dd.MM.yyyy' }}
+              </div>
+            </div> </div> </div> </div> <ng-template #noReminders>
         <div class="text-center py-12">
-          <p class="text-gray-500">Lade Erinnerungen...</p>
+          <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-300">Keine Erinnerungen gefunden</h3>
+          <p class="mt-1 text-sm text-gray-500">Füge Erinnerungen bei deinen Bewerbungen hinzu, um hier eine Übersicht zu sehen.</p>
         </div>
       </ng-template>
-    </div>
- </div>
+    </ng-container>
+
+    <ng-template #loading>
+      <div class="text-center py-12">
+        <p class="text-gray-500">Lade Erinnerungen...</p>
+      </div>
+    </ng-template>
+  </div> </div>
