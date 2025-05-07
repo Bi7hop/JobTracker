@@ -91,9 +91,17 @@ export class LandingComponent {
   }
 
   loginAsDemo(): void {
-    this.email = 'demo@jobtracker.com';
-    this.password = 'demoaccount';
-    this.submitAuth();
+    this.isLoading = true;
+    
+    this.authService.loginAsDemo()
+      .then(success => {
+        if (success) {
+          this.router.navigate(['/dashboard']);
+        }
+      })
+      .finally(() => {
+        this.isLoading = false;
+      });
   }
 
   togglePasswordVisibility(): void {
