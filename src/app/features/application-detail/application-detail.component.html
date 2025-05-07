@@ -66,7 +66,11 @@
                        <time class="text-xs font-normal text-gray-500 flex-shrink-0">{{ item.timestamp | date:'dd.MM.yyyy, HH:mm' }}</time>
                      </div>
                      <div class="text-sm text-gray-300">
-                       <ng-container *ngIf="isStatusChangeItem(item)">Von <span class="font-medium text-gray-400">{{ item.data.oldStatus || 'N/A (Erstellt)' }}</span> nach <span class="font-medium text-white px-2 py-0.5 rounded" [ngClass]="getStatusColor(item.data.newStatus)">{{ item.data.newStatus }}</span></ng-container>
+                      <ng-container *ngIf="isStatusChangeItem(item)">
+                        <span *ngIf="item.data.oldStatus">Von <span class="font-medium text-gray-400">{{ item.data.oldStatus }}</span> nach </span>
+                        <span *ngIf="!item.data.oldStatus">Neu erstellt: </span>
+                        <span class="font-medium text-white px-2 py-0.5 rounded" [ngClass]="getStatusColor(item.data.newStatus)">{{ item.data.newStatus }}</span>
+                      </ng-container>
                        <ng-container *ngIf="isNoteItem(item)"><div class="whitespace-pre-wrap bg-gray-800/50 p-2 rounded">{{ item.data.content }}<div *ngIf="item.data.updatedAt" class="text-xs text-gray-500 mt-1">(Bearbeitet: {{ item.data.updatedAt | date:'dd.MM.yyyy, HH:mm' }})</div></div></ng-container>
                        <ng-container *ngIf="isCommunicationItem(item)"><p class="mb-1 whitespace-pre-wrap">{{ item.data.content }}</p><div class="flex flex-wrap gap-x-4 text-xs text-gray-500 mt-1"><span *ngIf="item.data.contactPerson">Kontakt: {{ item.data.contactPerson }}</span><span>Richtung: {{ item.data.direction === 'outgoing' ? 'Ausgehend' : 'Eingehend' }}</span><span>Typ: {{ item.data.type }}</span></div></ng-container>
                        <ng-container *ngIf="isReminderItem(item)"><p class="mb-1">{{ item.data.reminderText }}</p><p class="text-xs" [ngClass]="item.data.isCompleted ? 'text-green-500' : 'text-yellow-500'">Fällig: {{ item.data.date | date:'dd.MM.yyyy' }} {{ item.data.isCompleted ? '(Erledigt)' : '' }}<button *ngIf="!item.data.isCompleted" (click)="toggleReminderCompletion(item.data.id)" class="ml-2 text-xs text-purple-400 hover:text-purple-300">[Als erledigt markieren]</button></p></ng-container>
