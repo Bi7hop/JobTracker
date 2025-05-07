@@ -337,8 +337,24 @@ export class ApplicationDetailComponent implements OnInit {
   }
 
   addCommunication(): void {
-    try { this.newCommunication.date = new Date(this.newCommunicationDateString); if (isNaN(this.newCommunication.date.getTime())) throw new Error("Invalid Date"); }
-    catch (e) { this.notificationService.showError('Ungültiges Datum für Kommunikation.'); return; }
+    try { 
+      if (this.newCommunicationDateString) {
+        const now = new Date();
+        const dateOnly = new Date(this.newCommunicationDateString);
+        
+        dateOnly.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+        this.newCommunication.date = dateOnly;
+      } else {
+        this.newCommunication.date = new Date(); 
+      }
+      
+      if (isNaN(this.newCommunication.date.getTime())) throw new Error("Invalid Date");
+    }
+    catch (e) { 
+      this.notificationService.showError('Ungültiges Datum für Kommunikation.'); 
+      return; 
+    }
+    
     if (this.newCommunication.subject.trim() && this.newCommunication.content.trim() && this.applicationId) {
       const communicationData = { ...this.newCommunication };
       this.jobAppService.addCommunication(this.applicationId, communicationData).subscribe({
