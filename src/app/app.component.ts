@@ -49,7 +49,9 @@ export class AppComponent implements OnInit {
   
   private checkRouteAccess(): void {
     const publicRoutes = ['/landing', '/', '/impressum', '/datenschutz'];
-    if (!publicRoutes.includes(this.currentRoute) && !this.authService.isAuthenticated()) {
+    const isPublicRoute = publicRoutes.some(route => this.currentRoute.startsWith(route));
+    
+    if (!isPublicRoute && !this.authService.isAuthenticated()) {
       this.router.navigate(['/landing']);
     }
   }
