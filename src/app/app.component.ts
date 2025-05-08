@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd, RouterLink } from '@angular/router';
 import { HeaderComponent } from './shared/components/header/header.component';
 import { ReminderCheckService } from './services/reminder-check.service';
 import { ReminderNotificationModalComponent } from './shared/components/reminder-notification-modal/reminder-notification-modal.component';
@@ -14,7 +14,8 @@ import { AuthService } from './services/auth.service';
     CommonModule, 
     RouterOutlet, 
     HeaderComponent,
-    ReminderNotificationModalComponent
+    ReminderNotificationModalComponent,
+    RouterLink
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
@@ -47,7 +48,7 @@ export class AppComponent implements OnInit {
   }
   
   private checkRouteAccess(): void {
-    const publicRoutes = ['/landing', '/'];
+    const publicRoutes = ['/landing', '/', '/impressum', '/datenschutz'];
     if (!publicRoutes.includes(this.currentRoute) && !this.authService.isAuthenticated()) {
       this.router.navigate(['/landing']);
     }
