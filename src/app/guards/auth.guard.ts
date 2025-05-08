@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, CanActivateFn, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { CanActivate, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Injectable({
@@ -14,7 +14,7 @@ export class AuthGuard implements CanActivate {
   ): boolean {
     const publicRoutes = ['/landing', '/', '/impressum', '/datenschutz'];
     
-    if (publicRoutes.includes(state.url)) {
+    if (publicRoutes.some(route => state.url.startsWith(route))) {
       return true; 
     }
     
