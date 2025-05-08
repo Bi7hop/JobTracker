@@ -54,12 +54,23 @@
         </div>
         
         <div class="flex justify-center mb-12">
+          <!-- Demo Mode -->
           <button 
+              class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold rounded-md shadow-lg transition duration-300 relative opacity-75 cursor-not-allowed group"
+              title="Registrierung ist derzeit deaktiviert"
+            >
+              Starte jetzt
+              <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2 bg-gray-800 text-xs text-white rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+               Die Registrierung ist derzeit deaktiviert. Bitte nutze den Demo-Modus.
+              </div>
+            </button>
+            <!-- Normal Mode -->
+          <!-- <button 
             (click)="startTracking()"
             class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold rounded-md shadow-lg transition duration-300"
           >
             Starte jetzt
-          </button>
+          </button> -->
           <button 
             (click)="loginAsDemo()" 
             class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md shadow-lg transition duration-300 mx-2"
