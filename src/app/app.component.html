@@ -5,6 +5,20 @@
   <main class="flex-grow px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full"> 
     <router-outlet></router-outlet>
   </main>
+
+  <footer class="bg-gray-950 py-6 px-4">
+    <div class="container mx-auto">
+      <div class="flex flex-col justify-center items-center">
+        <div class="flex gap-6 mb-2">
+          <a routerLink="/impressum" class="text-gray-400 hover:text-white text-sm">Impressum</a>
+          <a routerLink="/datenschutz" class="text-gray-400 hover:text-white text-sm">Datenschutz</a>
+        </div>
+        <div class="text-gray-500 text-xs">
+          &copy; 2025 JobTracker | Alle Rechte vorbehalten
+        </div>
+      </div>
+    </div>
+  </footer>
   
   <app-reminder-notification-modal
     *ngIf="reminderCheckService.dueReminder$ | async as dueReminder"
