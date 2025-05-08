@@ -38,6 +38,7 @@ export class AuthService {
   
   private async checkInitialAuthState(): Promise<void> {
     try {
+      const isStoredDemoMode = localStorage.getItem('isDemo') === 'true';
       const { data } = await this.supabaseService.client.auth.getSession();
       const isAuthenticated = !!data.session;
       
@@ -46,13 +47,19 @@ export class AuthService {
       if (isAuthenticated) {
         await this.loadUserProfile();
         const currentProfile = this._userProfile.getValue();
-        if (currentProfile && currentProfile.email === this.DEMO_EMAIL) {
+        if (isStoredDemoMode || (currentProfile && currentProfile.email === this.DEMO_EMAIL)) {
           this._isDemoUser.next(true);
+          localStorage.setItem('isDemo', 'true'); 
         }
       } else {
         this._profileLoaded.next(false);
+        if (isStoredDemoMode) {
+          console.log('Automatically logging in as demo user after page reload');
+          await this.loginAsDemo();
+        }
       }
     } catch (error) {
+      console.error('Error checking auth state:', error);
       this._isAuthenticated.next(false);
       this._profileLoaded.next(false);
     }
@@ -83,6 +90,7 @@ export class AuthService {
         this._profileLoaded.next(false);
       }
     } catch (error) {
+      console.error('Error loading user profile:', error);
       this._userProfile.next(null);
       this._profileLoaded.next(false);
     }
@@ -136,14 +144,17 @@ export class AuthService {
       
       if (email === this.DEMO_EMAIL) {
         this._isDemoUser.next(true);
+        localStorage.setItem('isDemo', 'true');
         this.notificationService.showInfo('Sie sind im Demo-Modus. Sie können alle Funktionen testen, aber Ihre Änderungen werden zurückgesetzt, wenn Sie sich abmelden.');
       } else {
         this._isDemoUser.next(false);
+        localStorage.removeItem('isDemo');
       }
       
       this.notificationService.showSuccess('Erfolgreich eingeloggt');
       return true;
     } catch (error: any) {
+      console.error('Login error:', error);
       this.notificationService.showError(`Login fehlgeschlagen: ${error.message}`);
       return false;
     }
@@ -170,6 +181,7 @@ export class AuthService {
       this.notificationService.showSuccess('Konto erfolgreich erstellt! Bitte melden Sie sich jetzt an.');
       return true;
     } catch (error: any) {
+      console.error('Signup error:', error);
       this.notificationService.showError(`Registrierung fehlgeschlagen: ${error.message}`);
       return false;
     }
@@ -186,9 +198,12 @@ export class AuthService {
       this._profileLoaded.next(false);
       this._isDemoUser.next(false);
       
+      localStorage.removeItem('isDemo');
+      
       this.router.navigate(['/landing']);
       this.notificationService.showSuccess('Sie wurden abgemeldet');
     } catch (error: any) {
+      console.error('Logout error:', error);
       this.notificationService.showError(`Abmeldung fehlgeschlagen: ${error.message}`);
     }
   }
